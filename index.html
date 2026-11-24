@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>桂林 3D 模拟城市 · Guilin 3D City Simulation</title>
+  <link rel="stylesheet" href="./src/styles.css" />
+</head>
+<body>
+  <div id="canvas-container"></div>
+
+  <!-- Top-Left Title & Telemetry HUD -->
+  <header class="hud-header" id="hud-header">
+    <div class="brand-card glass">
+      <div class="brand-seal">桂</div>
+      <div class="brand-text">
+        <h1>桂林 · 3D山水模拟城市</h1>
+        <p>GUILIN 3D CITY SIMULATION · 两江四湖 · 喀斯特峰林</p>
+      </div>
+    </div>
+
+    <div class="telemetry-bar glass">
+      <div class="metric">
+        <span class="metric-label">桂林时辰</span>
+        <span class="metric-value" id="stat-time">09:30</span>
+      </div>
+      <div class="metric-divider"></div>
+      <div class="metric">
+        <span class="metric-label">模拟人口</span>
+        <span class="metric-value" id="stat-pop">134.8万</span>
+      </div>
+      <div class="metric-divider"></div>
+      <div class="metric">
+        <span class="metric-label">在航船筏</span>
+        <span class="metric-value" id="stat-boats">16 艘</span>
+      </div>
+      <div class="metric-divider"></div>
+      <div class="metric">
+        <span class="metric-label">空气质量</span>
+        <span class="metric-value jade" id="stat-aqi">优 · 24</span>
+      </div>
+      <div class="metric-divider"></div>
+      <div class="metric">
+        <span class="metric-label">帧率</span>
+        <span class="metric-value" id="stat-fps">60 FPS</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Right Collapsible Simulation & Planning Panel -->
+  <aside class="control-panel glass" id="control-panel">
+    <div class="panel-header">
+      <span class="panel-title">城市模拟控制</span>
+      <div class="panel-header-actions">
+        <button id="btn-toggle-hud" class="icon-btn" title="隐藏/显示界面 (H)">👁</button>
+        <button id="btn-collapse-panel" class="icon-btn" title="折叠面板">−</button>
+      </div>
+    </div>
+
+    <div class="panel-body" id="panel-body">
+      <!-- Time of Day -->
+      <section class="ctrl-section">
+        <div class="ctrl-row-between">
+          <label class="ctrl-label">昼夜光照</label>
+          <label class="switch-inline">
+            <input type="checkbox" id="chk-auto-time" />
+            <span>自动流转</span>
+          </label>
+        </div>
+        <input type="range" id="slider-time" min="0" max="24" step="0.05" value="9.5" />
+        <div class="preset-grid-4">
+          <button class="chip-btn" data-time="6.3">晨雾</button>
+          <button class="chip-btn active" data-time="10.5">晴日</button>
+          <button class="chip-btn" data-time="17.5">日落</button>
+          <button class="chip-btn" data-time="20.8">夜景</button>
+        </div>
+      </section>
+
+      <!-- Weather -->
+      <section class="ctrl-section">
+        <label class="ctrl-label">桂林气象</label>
+        <div class="preset-grid-3">
+          <button class="chip-btn active" data-weather="clear">晴朗</button>
+          <button class="chip-btn" data-weather="misty">水墨晨雾</button>
+          <button class="chip-btn" data-weather="rain">烟雨漓江</button>
+        </div>
+      </section>
+
+      <!-- Simulation Sliders -->
+      <section class="ctrl-section">
+        <label class="ctrl-label">城市运行模拟</label>
+        <div class="slider-item">
+          <div class="ctrl-row-between">
+            <span>游船与竹筏</span>
+            <span id="val-boats">100%</span>
+          </div>
+          <input type="range" id="slider-boats" min="0.2" max="1.0" step="0.05" value="1.0" />
+        </div>
+        <div class="slider-item">
+          <div class="ctrl-row-between">
+            <span>城市车流密度</span>
+            <span id="val-traffic">80%</span>
+          </div>
+          <input type="range" id="slider-traffic" min="0.0" max="1.0" step="0.05" value="0.8" />
+        </div>
+        <div class="slider-item">
+          <div class="ctrl-row-between">
+            <span>山间云雾浓度</span>
+            <span id="val-mist">35%</span>
+          </div>
+          <input type="range" id="slider-mist" min="0.0" max="1.0" step="0.05" value="0.35" />
+        </div>
+        <div class="slider-item">
+          <div class="ctrl-row-between">
+            <span>城区建筑密度</span>
+            <span id="val-density">85%</span>
+          </div>
+          <input type="range" id="slider-density" min="0.25" max="1.0" step="0.05" value="0.85" />
+        </div>
+      </section>
+
+      <!-- Interactive City Planning / Build Mode -->
+      <section class="ctrl-section">
+        <div class="ctrl-row-between">
+          <label class="ctrl-label">互动建造规划</label>
+          <span class="hint-tag" id="build-hint">点击地标查看详情</span>
+        </div>
+        <div class="preset-grid-3">
+          <button class="chip-btn active" data-build="inspect">自由漫游</button>
+          <button class="chip-btn" data-build="pavilion">建·亭台</button>
+          <button class="chip-btn" data-build="courtyard">建·岭南居</button>
+          <button class="chip-btn" data-build="modern">建·现代楼</button>
+          <button class="chip-btn" data-build="grove">种·桂花林</button>
+          <button class="chip-btn accent" id="btn-spawn-boat">+ 增派游船</button>
+        </div>
+      </section>
+    </div>
+  </aside>
+
+  <!-- Landmark Details Popup Card -->
+  <div class="landmark-card glass hidden" id="landmark-card">
+    <button class="close-card" id="btn-close-card" title="关闭">×</button>
+    <div class="landmark-badge" id="card-category">桂林城徽</div>
+    <h2 id="card-title">象鼻山</h2>
+    <div class="landmark-sub">
+      <span id="card-en">Elephant Trunk Hill</span>
+      <span class="dot">·</span>
+      <span id="card-elev">山高 55m</span>
+    </div>
+    <p id="card-desc"></p>
+  </div>
+
+  <!-- Bottom Landmark Camera Tour Bar -->
+  <nav class="landmark-dock glass" id="landmark-dock" aria-label="桂林地标视角">
+    <!-- Populated dynamically from LANDMARKS -->
+  </nav>
+
+  <!-- Subtle Floating Restore HUD Button (when hidden) -->
+  <button class="restore-hud-btn glass hidden" id="btn-restore-hud">显示控制面板 (H)</button>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
