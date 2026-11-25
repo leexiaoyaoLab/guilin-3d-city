@@ -410,6 +410,9 @@ document.getElementById('btn-enter-roam').addEventListener('click', () => {
 document.getElementById('btn-exit-roam').addEventListener('click', () => {
   firstPerson.exit();
 });
+document.getElementById('btn-roam-view').addEventListener('click', () => {
+  firstPerson.toggleViewMode();
+});
 document.getElementById('btn-roam-drive').addEventListener('click', () => {
   firstPerson.setDriveMode(!firstPerson.isDriveMode());
 });

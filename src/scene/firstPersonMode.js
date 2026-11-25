@@ -359,11 +359,205 @@ function createMinimapRenderer(canvas) {
 }
 
 /**
- * Main GTA-style First-Person Immersive Street Roaming Controller
+ * Creates an articulated stylized 3D character avatar for Third-Person Walk/Sprint Mode
+ */
+function createPlayerAvatar() {
+  const root = new THREE.Group();
+  root.visible = false;
+
+  const jacketMat = new THREE.MeshStandardMaterial({ color: 0x1e4d4b, roughness: 0.6 });
+  const shirtMat = new THREE.MeshStandardMaterial({ color: 0xedf2f0, roughness: 0.7 });
+  const pantsMat = new THREE.MeshStandardMaterial({ color: 0x262c34, roughness: 0.8 });
+  const skinMat = new THREE.MeshStandardMaterial({ color: 0xf0c7a5, roughness: 0.7 });
+  const hairMat = new THREE.MeshStandardMaterial({ color: 0x1c1c20, roughness: 0.85 });
+  const packMat = new THREE.MeshStandardMaterial({ color: 0xc98b32, roughness: 0.7 });
+  const shoeMat = new THREE.MeshStandardMaterial({ color: 0xe6ecea, roughness: 0.65 });
+
+  // Torso
+  const torso = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.72, 0.3), jacketMat);
+  torso.position.y = 1.16;
+  torso.castShadow = true;
+  root.add(torso);
+
+  // Subtle front shirt stripe
+  const shirt = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.68, 0.315), shirtMat);
+  shirt.position.y = 1.16;
+  root.add(shirt);
+
+  // Traveler backpack
+  const backpack = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.52, 0.2), packMat);
+  backpack.position.set(0, 1.18, 0.22);
+  backpack.castShadow = true;
+  root.add(backpack);
+
+  // Head + Hair
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 12), skinMat);
+  head.position.y = 1.72;
+  head.castShadow = true;
+  root.add(head);
+
+  const hair = new THREE.Mesh(new THREE.SphereGeometry(0.215, 12, 10, 0, Math.PI * 2, 0, Math.PI * 0.58), hairMat);
+  hair.position.set(0, 1.75, 0.02);
+  root.add(hair);
+
+  // Articulated Arms (pivoting at shoulder)
+  function makeLimb(w, h, d, mat, yOffset) {
+    const pivot = new THREE.Group();
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+    mesh.position.y = yOffset;
+    mesh.castShadow = true;
+    pivot.add(mesh);
+    return pivot;
+  }
+
+  const leftArm = makeLimb(0.16, 0.62, 0.16, jacketMat, -0.28);
+  leftArm.position.set(-0.37, 1.46, 0);
+  root.add(leftArm);
+
+  const rightArm = makeLimb(0.16, 0.62, 0.16, jacketMat, -0.28);
+  rightArm.position.set(0.37, 1.46, 0);
+  root.add(rightArm);
+
+  // Articulated Legs (pivoting at hip)
+  const leftLeg = makeLimb(0.2, 0.76, 0.2, pantsMat, -0.38);
+  leftLeg.position.set(-0.15, 0.8, 0);
+  const leftShoe = new THREE.Mesh(new THREE.BoxGeometry(0.21, 0.12, 0.3), shoeMat);
+  leftShoe.position.set(0, -0.74, -0.05);
+  leftLeg.add(leftShoe);
+  root.add(leftLeg);
+
+  const rightLeg = makeLimb(0.2, 0.76, 0.2, pantsMat, -0.38);
+  rightLeg.position.set(0.15, 0.8, 0);
+  const rightShoe = new THREE.Mesh(new THREE.BoxGeometry(0.21, 0.12, 0.3), shoeMat);
+  rightShoe.position.set(0, -0.74, -0.05);
+  rightLeg.add(rightShoe);
+  root.add(rightLeg);
+
+  return { root, leftArm, rightArm, leftLeg, rightLeg };
+}
+
+/**
+ * Creates a sleek GTA-style 3D Sports Cruiser Car for Third-Person Drive Mode
+ */
+function createExteriorCruiserCar() {
+  const car = new THREE.Group();
+  car.visible = false;
+
+  const bodyMat = new THREE.MeshStandardMaterial({
+    color: 0x16323a,
+    metalness: 0.78,
+    roughness: 0.22
+  });
+  const glassMat = new THREE.MeshStandardMaterial({
+    color: 0x1a2c38,
+    metalness: 0.6,
+    roughness: 0.15,
+    transparent: true,
+    opacity: 0.82
+  });
+  const wheelMat = new THREE.MeshStandardMaterial({ color: 0x181a1e, roughness: 0.8 });
+  const rimMat = new THREE.MeshStandardMaterial({ color: 0xcfd8dc, metalness: 0.8, roughness: 0.25 });
+  const headMat = new THREE.MeshStandardMaterial({
+    color: 0xfff8dc,
+    emissive: 0xfff0b8,
+    emissiveIntensity: 1.6
+  });
+  const tailMat = new THREE.MeshStandardMaterial({
+    color: 0xff3b3b,
+    emissive: 0xff1e1e,
+    emissiveIntensity: 1.8
+  });
+  const trimMat = new THREE.MeshStandardMaterial({
+    color: 0x4ec4a7,
+    emissive: 0x2ec4a2,
+    emissiveIntensity: 0.9
+  });
+
+  // Lower sculpted chassis (faces -Z forward!)
+  const chassis = new THREE.Mesh(new THREE.BoxGeometry(1.92, 0.62, 4.35), bodyMat);
+  chassis.position.y = 0.58;
+  chassis.castShadow = true;
+  chassis.receiveShadow = true;
+  car.add(chassis);
+
+  // Sleek aerodynamic cabin
+  const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.58, 0.56, 2.05), glassMat);
+  cabin.position.set(0, 1.12, 0.15);
+  cabin.castShadow = true;
+  car.add(cabin);
+
+  // Roof panel
+  const roof = new THREE.Mesh(new THREE.BoxGeometry(1.52, 0.08, 1.4), bodyMat);
+  roof.position.set(0, 1.42, 0.22);
+  car.add(roof);
+
+  // Rear spoiler
+  const spoiler = new THREE.Mesh(new THREE.BoxGeometry(1.86, 0.07, 0.28), bodyMat);
+  spoiler.position.set(0, 1.06, 2.04);
+  car.add(spoiler);
+
+  // Side jade neon accent strips
+  for (const sx of [-0.97, 0.97]) {
+    const strip = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.06, 2.6), trimMat);
+    strip.position.set(sx, 0.36, 0);
+    car.add(strip);
+  }
+
+  // Headlights (front at -Z) & Tail light bar (rear at +Z)
+  for (const sx of [-0.66, 0.66]) {
+    const hl = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.14, 0.08), headMat);
+    hl.position.set(sx, 0.64, -2.18);
+    car.add(hl);
+  }
+  const tailBar = new THREE.Mesh(new THREE.BoxGeometry(1.76, 0.14, 0.08), tailMat);
+  tailBar.position.set(0, 0.72, 2.18);
+  car.add(tailBar);
+
+  // Rear lower jade accent diffuser strip for crisp night silhouette
+  const rearDiffuser = new THREE.Mesh(new THREE.BoxGeometry(1.42, 0.06, 0.08), trimMat);
+  rearDiffuser.position.set(0, 0.36, 2.19);
+  car.add(rearDiffuser);
+
+  // 4 Wheels
+  const wheels = [];
+  const wheelGeo = new THREE.CylinderGeometry(0.35, 0.35, 0.28, 14);
+  wheelGeo.rotateZ(Math.PI / 2);
+  const rimGeo = new THREE.CylinderGeometry(0.2, 0.2, 0.3, 8);
+  rimGeo.rotateZ(Math.PI / 2);
+
+  const wheelCoords = [
+    [-0.95, 0.35, -1.35],
+    [0.95, 0.35, -1.35],
+    [-0.95, 0.35, 1.35],
+    [0.95, 0.35, 1.35]
+  ];
+  for (const [wx, wy, wz] of wheelCoords) {
+    const wg = new THREE.Group();
+    wg.position.set(wx, wy, wz);
+    wg.add(new THREE.Mesh(wheelGeo, wheelMat), new THREE.Mesh(rimGeo, rimMat));
+    car.add(wg);
+    wheels.push(wg);
+  }
+
+  // Exterior headlights SpotLight pointing forward (-Z)
+  const carHeadlight = new THREE.SpotLight(0xfff4d6, 0, 62, Math.PI * 0.3, 0.45, 1.4);
+  carHeadlight.position.set(0, 0.85, -2.1);
+  const carTarget = new THREE.Object3D();
+  carTarget.position.set(0, 0.1, -20);
+  car.add(carTarget);
+  carHeadlight.target = carTarget;
+  car.add(carHeadlight);
+
+  return { car, wheels, carHeadlight };
+}
+
+/**
+ * Main GTA-style First-Person & Third-Person Immersive Street Roaming Controller
  */
 export function createFirstPersonController(camera, domElement, scene, callbacks = {}) {
   let active = false;
   let driveMode = false; // false = Walk/Sprint, true = Street Cruiser Drive
+  let viewMode = 'first'; // 'first' | 'third'
   let pointerLocked = false;
   let isDraggingLook = false;
   let lastMouse = { x: 0, y: 0 };
@@ -374,6 +568,7 @@ export function createFirstPersonController(camera, domElement, scene, callbacks
   let isGrounded = true;
   let yaw = -Math.PI * 0.48;
   let pitch = 0.05;
+  let avatarYaw = -Math.PI * 0.48;
   let bobTimer = 0;
   let currentSpeedKmh = 0;
   let steerVisual = 0;
@@ -387,10 +582,17 @@ export function createFirstPersonController(camera, domElement, scene, callbacks
     jump: false
   };
 
-  // Attach cruiser cockpit to camera
+  // Attach first-person cruiser cockpit to camera
   const { cockpit, wheelGroup, headlight } = createCruiserCockpit();
   camera.add(cockpit);
   scene.add(camera);
+
+  // Add third-person 3D character avatar & exterior sports car to scene
+  const avatar = createPlayerAvatar();
+  scene.add(avatar.root);
+
+  const exteriorCar = createExteriorCruiserCar();
+  scene.add(exteriorCar.car);
 
   // Minimap
   const minimapCanvas = document.getElementById('roam-minimap');
@@ -402,15 +604,32 @@ export function createFirstPersonController(camera, domElement, scene, callbacks
   const hudSpeed = document.getElementById('roam-speed');
   const hudModeBadge = document.getElementById('roam-mode-badge');
   const hudLockHint = document.getElementById('roam-lock-hint');
+  const hudReticle = document.querySelector('.roam-reticle');
   const btnDriveToggle = document.getElementById('btn-roam-drive');
+  const btnViewToggle = document.getElementById('btn-roam-view');
 
   let lastDistrictKey = '';
+
+  function syncVisualMeshes() {
+    const isThird = active && viewMode === 'third';
+    cockpit.visible = active && driveMode && !isThird;
+    avatar.root.visible = isThird && !driveMode;
+    exteriorCar.car.visible = isThird && driveMode;
+    if (hudReticle) {
+      hudReticle.classList.toggle('hidden', isThird);
+    }
+    if (btnViewToggle) {
+      btnViewToggle.textContent = viewMode === 'third' ? '第三人称 (V)' : '第一人称 (V)';
+      btnViewToggle.classList.toggle('active', viewMode === 'third');
+    }
+  }
 
   function teleportTo(spawn) {
     playerPos.set(spawn.pos[0], spawn.pos[1], spawn.pos[2]);
     const gy = getStreetGroundY(playerPos.x, playerPos.z);
     if (gy !== null) playerPos.y = gy;
     yaw = spawn.yaw;
+    avatarYaw = spawn.yaw;
     pitch = spawn.pitch;
     velocity.set(0, 0, 0);
     verticalVel = 0;
@@ -420,7 +639,10 @@ export function createFirstPersonController(camera, domElement, scene, callbacks
 
   function setDriveMode(enabled) {
     driveMode = enabled;
-    cockpit.visible = active && driveMode;
+    if (driveMode) {
+      avatarYaw = yaw;
+    }
+    syncVisualMeshes();
     if (hudModeBadge) {
       hudModeBadge.textContent = driveMode ? '敞篷巡游 DRIVE' : '街景步行 WALK';
       hudModeBadge.classList.toggle('drive', driveMode);
@@ -431,12 +653,26 @@ export function createFirstPersonController(camera, domElement, scene, callbacks
     }
   }
 
+  function setViewMode(mode) {
+    viewMode = mode === 'third' ? 'third' : 'first';
+    if (viewMode === 'third' && pitch > 0.05) {
+      pitch = -0.14; // Slight cinematic downward chase angle
+    }
+    syncVisualMeshes();
+    applyCameraTransform(0);
+  }
+
+  function toggleViewMode() {
+    setViewMode(viewMode === 'first' ? 'third' : 'first');
+  }
+
   function enter(spawnId = 'jiefang-bridge') {
     if (active) return;
     active = true;
     const spawn = ROAM_SPAWNS.find((s) => s.id === spawnId) || ROAM_SPAWNS[0];
     teleportTo(spawn);
     setDriveMode(false);
+    syncVisualMeshes();
     camera.fov = 64;
     camera.updateProjectionMatrix();
 
@@ -448,7 +684,10 @@ export function createFirstPersonController(camera, domElement, scene, callbacks
     if (!active) return;
     active = false;
     cockpit.visible = false;
+    avatar.root.visible = false;
+    exteriorCar.car.visible = false;
     headlight.intensity = 0;
+    exteriorCar.carHeadlight.intensity = 0;
     if (document.pointerLockElement === domElement) {
       document.exitPointerLock();
     }
@@ -472,13 +711,44 @@ export function createFirstPersonController(camera, domElement, scene, callbacks
     }
   }
 
+  const chaseLookTarget = new THREE.Vector3();
+
   function applyCameraTransform(bobOffset) {
-    const eyeHeight = driveMode ? 1.58 : 1.92;
-    camera.position.set(playerPos.x, playerPos.y + eyeHeight + bobOffset, playerPos.z);
-    camera.rotation.order = 'YXZ';
-    camera.rotation.y = yaw;
-    camera.rotation.x = pitch;
-    camera.rotation.z = driveMode ? -steerVisual * 0.025 : 0;
+    // Update 3D third-person avatar / car transforms
+    avatar.root.position.copy(playerPos);
+    avatar.root.rotation.y = avatarYaw;
+
+    exteriorCar.car.position.copy(playerPos);
+    exteriorCar.car.rotation.y = yaw;
+
+    if (viewMode === 'third') {
+      // Classic GTA over-the-shoulder / chase camera orbiting behind player/car
+      const horizSpeed = Math.hypot(velocity.x, velocity.z);
+      const baseDist = driveMode ? 8.2 + Math.min(2.6, horizSpeed * 0.08) : 5.4;
+      const focusHeight = driveMode ? 1.55 : 1.72;
+      const chasePitch = THREE.MathUtils.clamp(-pitch + 0.22, 0.06, 0.85);
+
+      const horizDist = Math.cos(chasePitch) * baseDist;
+      const vertOffset = Math.sin(chasePitch) * baseDist;
+
+      // Camera positioned behind look yaw (+sin(yaw), +cos(yaw) is backward since forward is -sin, -cos)
+      const camX = playerPos.x + Math.sin(yaw) * horizDist;
+      const camZ = playerPos.z + Math.cos(yaw) * horizDist;
+      const groundUnderCam = getStreetGroundY(camX, camZ);
+      const minCamY = (groundUnderCam !== null ? groundUnderCam : 0.4) + 0.85;
+      const camY = Math.max(minCamY, playerPos.y + focusHeight + vertOffset);
+
+      camera.position.set(camX, camY, camZ);
+      chaseLookTarget.set(playerPos.x, playerPos.y + focusHeight, playerPos.z);
+      camera.lookAt(chaseLookTarget);
+    } else {
+      const eyeHeight = driveMode ? 1.58 : 1.92;
+      camera.position.set(playerPos.x, playerPos.y + eyeHeight + bobOffset, playerPos.z);
+      camera.rotation.order = 'YXZ';
+      camera.rotation.y = yaw;
+      camera.rotation.x = pitch;
+      camera.rotation.z = driveMode ? -steerVisual * 0.025 : 0;
+    }
   }
 
   // Pointer Lock & Mouse Look Events
@@ -559,6 +829,9 @@ export function createFirstPersonController(camera, domElement, scene, callbacks
       case 'KeyC':
         if (pressed) setDriveMode(!driveMode);
         break;
+      case 'KeyV':
+        if (pressed) toggleViewMode();
+        break;
       case 'Escape':
         // First ESC releases pointer lock automatically; second ESC exits roam mode
         if (pressed && !pointerLocked) {
@@ -586,7 +859,9 @@ export function createFirstPersonController(camera, domElement, scene, callbacks
     if (!active) return;
 
     // Headlight intensity at dusk/night in drive mode
-    headlight.intensity = driveMode ? 4.5 + nightFactor * 38 : 0;
+    const isThird = viewMode === 'third';
+    headlight.intensity = driveMode && !isThird ? 4.5 + nightFactor * 38 : 0;
+    exteriorCar.carHeadlight.intensity = driveMode && isThird ? 5.5 + nightFactor * 42 : 0;
 
     // Direction vectors on XZ plane
     forwardDir.set(-Math.sin(yaw), 0, -Math.cos(yaw)).normalize();
@@ -694,6 +969,33 @@ export function createFirstPersonController(camera, domElement, scene, callbacks
       bobOffset = Math.sin(bobTimer) * 0.015;
     }
 
+    // Animate third-person avatar limbs & facing direction, or car wheels
+    if (!driveMode) {
+      if (horizSpeed > 0.4) {
+        const targetAvatarYaw = Math.atan2(-velocity.x, -velocity.z);
+        let diff = targetAvatarYaw - avatarYaw;
+        while (diff > Math.PI) diff -= Math.PI * 2;
+        while (diff < -Math.PI) diff += Math.PI * 2;
+        avatarYaw += diff * Math.min(1, dt * 10);
+
+        const swing = Math.sin(bobTimer) * (keys.sprint ? 0.85 : 0.55);
+        avatar.leftLeg.rotation.x = swing;
+        avatar.rightLeg.rotation.x = -swing;
+        avatar.leftArm.rotation.x = -swing * 0.85;
+        avatar.rightArm.rotation.x = swing * 0.85;
+      } else {
+        avatar.leftLeg.rotation.x = THREE.MathUtils.lerp(avatar.leftLeg.rotation.x, 0, dt * 10);
+        avatar.rightLeg.rotation.x = THREE.MathUtils.lerp(avatar.rightLeg.rotation.x, 0, dt * 10);
+        avatar.leftArm.rotation.x = THREE.MathUtils.lerp(avatar.leftArm.rotation.x, 0, dt * 10);
+        avatar.rightArm.rotation.x = THREE.MathUtils.lerp(avatar.rightArm.rotation.x, 0, dt * 10);
+      }
+    } else {
+      const wheelSpin = velocity.dot(forwardDir) * dt * 2.4;
+      for (const w of exteriorCar.wheels) {
+        w.rotation.x -= wheelSpin;
+      }
+    }
+
     applyCameraTransform(bobOffset);
 
     // Update GTA Street HUD
@@ -721,8 +1023,11 @@ export function createFirstPersonController(camera, domElement, scene, callbacks
     exit,
     teleportTo,
     setDriveMode,
+    setViewMode,
+    toggleViewMode,
     update,
     isActive: () => active,
-    isDriveMode: () => driveMode
+    isDriveMode: () => driveMode,
+    getViewMode: () => viewMode
   };
 }
