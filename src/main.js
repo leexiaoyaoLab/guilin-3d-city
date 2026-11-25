@@ -13,6 +13,7 @@ import { createGuilinEnvironment } from './scene/materialsLibrary.js';
 import { createBaiduMap3DManager } from './bmap/baiduMap3D.js';
 import { BMAP_ROAM_SPAWNS } from './bmap/coordTransform.js';
 import { createLandmarkEditor } from './scene/landmarkEditor.js';
+import { createGuilinStreetscape } from './scene/streetscape.js';
 
 // =========================================================
 // 1. RENDERER, SCENE, CAMERA & CONTROLS
@@ -54,6 +55,7 @@ const terrainSystem = createTerrainAndWater(scene);
 const karstSystem = createKarstMountains(scene, physicsWorld);
 const landmarkSystem = createLandmarks(scene, physicsWorld);
 const urbanSystem = createUrbanCity(scene, physicsWorld);
+const streetscapeSystem = createGuilinStreetscape(scene, physicsWorld);
 const simSystem = createSimulation(scene);
 
 // Saved Orbit camera state when entering First-Person Roaming Mode
@@ -597,9 +599,10 @@ function updateNightIllumination(nightFactor) {
     bMat.emissiveIntensity = winGlow;
   }
 
-  // Streetlights, Bridge Arches, Mountain Pavilions & Boat/Car Lights
+  // Streetlights, Bridge Arches, Mountain Pavilions, Streetscape Signs & Boat/Car Lights
   const streetGlow = 0.08 + nightFactor * 2.1;
   for (const m of urbanSystem.nightGlowMats) m.emissiveIntensity = streetGlow;
+  for (const m of streetscapeSystem.nightGlowMats) m.emissiveIntensity = 0.12 + nightFactor * 1.35;
   for (const m of terrainSystem.bridgeLights) m.emissiveIntensity = 0.1 + nightFactor * 2.0;
   for (const m of karstSystem.nightGlowMats) m.emissiveIntensity = 0.08 + nightFactor * 1.9;
   for (const m of simSystem.nightGlowMats) m.emissiveIntensity = 0.18 + nightFactor * 2.1;
