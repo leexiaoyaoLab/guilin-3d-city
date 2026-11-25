@@ -250,7 +250,7 @@ function createTwinPagodas(nightMaterials, pointLights) {
   const group = new THREE.Group();
   group.name = 'SunMoonTwinPagodas';
 
-  // 日塔 (Sun Pagoda - East side of Shan Lake) at (-3, 45)
+  // 日塔 (Sun Pagoda - East side of Shan Lake) at (-16, 31)
   const sunPagoda = buildOctagonalPagoda({
     tiers: 9,
     baseRadius: 3.15,
@@ -263,7 +263,7 @@ function createTwinPagodas(nightMaterials, pointLights) {
     isGold: true,
     nightMaterials
   });
-  sunPagoda.position.set(-3, -0.2, 45);
+  sunPagoda.position.set(-16, -0.2, 31);
   const sunPlaque = createPlaqueBoard(
     '日塔',
     2.1,
@@ -275,7 +275,7 @@ function createTwinPagodas(nightMaterials, pointLights) {
   sunPagoda.add(sunPlaque);
   group.add(sunPagoda);
 
-  // 月塔 (Moon Pagoda - West side of Shan Lake) at (-17, 47)
+  // 月塔 (Moon Pagoda - West side of Shan Lake) at (-27, 33)
   const moonPagoda = buildOctagonalPagoda({
     tiers: 7,
     baseRadius: 2.65,
@@ -288,7 +288,7 @@ function createTwinPagodas(nightMaterials, pointLights) {
     isGold: false,
     nightMaterials
   });
-  moonPagoda.position.set(-17, -0.2, 47);
+  moonPagoda.position.set(-27, -0.2, 33);
   const moonPlaque = createPlaqueBoard(
     '月塔',
     1.85,
@@ -309,7 +309,7 @@ function createTwinPagodas(nightMaterials, pointLights) {
     opacity: 0.65
   });
   nightMaterials.push({ mat: linkMat, baseEmissive: 0.1, nightEmissive: 1.4 });
-  const linkCurve = new THREE.LineCurve3(new THREE.Vector3(-3, 0.05, 45), new THREE.Vector3(-17, 0.05, 47));
+  const linkCurve = new THREE.LineCurve3(new THREE.Vector3(-16, 0.05, 31), new THREE.Vector3(-27, 0.05, 33));
   const linkGeo = new THREE.TubeGeometry(linkCurve, 12, 0.75, 6, false);
   linkGeo.scale(1, 0.25, 1);
   const linkMesh = new THREE.Mesh(linkGeo, linkMat);
@@ -317,12 +317,12 @@ function createTwinPagodas(nightMaterials, pointLights) {
 
   // Point lights for dramatic night reflection on Shan Lake
   const sunLight = new THREE.PointLight(0xffb845, 0, 58, 1.5);
-  sunLight.position.set(-3, 13, 45);
+  sunLight.position.set(-16, 13, 31);
   group.add(sunLight);
   pointLights.push({ light: sunLight, nightIntensity: 55 });
 
   const moonLight = new THREE.PointLight(0x6bd0ff, 0, 52, 1.5);
-  moonLight.position.set(-17, 11, 47);
+  moonLight.position.set(-27, 11, 33);
   group.add(moonLight);
   pointLights.push({ light: moonLight, nightIntensity: 45 });
 
@@ -339,8 +339,8 @@ function createTwinPagodas(nightMaterials, pointLights) {
 function createJingjiangPalace(nightMaterials) {
   const group = new THREE.Group();
   group.name = 'JingjiangPalace';
-  // Real map position: Directly North of East-West Alley (z = -56, south gate at z = -38)
-  group.position.set(0, 0.4, -56);
+  // Exact OSM position: (3, -56), south gate at (3, -38) directly north of East-West Alley
+  group.position.set(3, 0.4, -56);
 
   const mats = getMaterialsLibrary();
   const wallMat = new THREE.MeshStandardMaterial({
@@ -576,8 +576,8 @@ function buildTraditionalHall(width, depth, height, wallMat, roofMat, lanternMat
 function createAncientSouthGate(nightMaterials) {
   const group = new THREE.Group();
   group.name = 'AncientSouthGate';
-  // Real map position: North shore of Rong Lake (-64, 11), west of Yangqiao Bridge
-  group.position.set(-64, 0.3, 11.2);
+  // Exact OSM position: (-68, 6.2) on Rong Lake North Shore
+  group.position.set(-68, 0.3, 6.2);
 
   const mats = getMaterialsLibrary();
   const brickMat = new THREE.MeshStandardMaterial({
@@ -727,9 +727,9 @@ function createAncientSouthGate(nightMaterials) {
   }
   group.add(banyan);
 
-  // Scenic pavilion on Rong Lake Central Island (-74, 32) -> relative (-10, +20.8)
+  // Scenic pavilion on Rong Lake Central Island (-75, 21) -> relative (-7, +14.8)
   const islandPav = buildTraditionalHall(4.6, 4.6, 2.4, timberMat, roofMat, lanternMat);
-  islandPav.position.set(-10.0, 0.2, 20.8);
+  islandPav.position.set(-7.0, 0.2, 14.8);
   group.add(islandPav);
 
   group.traverse((c) => {
@@ -827,19 +827,22 @@ function createHistoricQuarter(nightMaterials) {
     group.add(l);
   }
 
-  // 1) Iconic Paifang Archway at East-West Alley entrance (東西巷, right on north side of Jiefang East Rd!)
+  // 1) Iconic Paifang Archway at East-West Alley entrance (東西巷, facing diagonal Jiefang East Rd at ~+17°!)
   const eastWestArch = createPaifangArchway('東西巷', nightMaterials);
-  eastWestArch.position.set(3.0, 0.4, -6.4);
+  eastWestArch.position.set(2.5, 0.4, -12.5);
+  eastWestArch.rotation.y = -0.28;
   group.add(eastWestArch);
 
-  // 2) Iconic Paifang Archway at Zhengyang Pedestrian Street entrance (正陽步行街, right on south side of Jiefang East Rd!)
+  // 2) Iconic Paifang Archway at Zhengyang Pedestrian Street entrance (正陽步行街, right on real polyline [-4.5,-11.2]->[-7.8,11.6]!)
   const zhengyangArch = createPaifangArchway('正陽步行街', nightMaterials);
-  zhengyangArch.position.set(-6.0, 0.4, 5.8);
+  zhengyangArch.position.set(-5.8, 0.4, -4.5);
+  zhengyangArch.rotation.y = -0.28;
   group.add(zhengyangArch);
 
-  // 3) 逍遥楼 (Xiaoyao Pavilion) — Iconic Tang-dynasty 3-story riverside tower at East End of East-West Alley, NW corner of Jiefang Bridge!
+  // 3) 逍遥楼 (Xiaoyao Pavilion) — Exact OSM position (21.5, -13.5) at East End of East-West Alley, NW corner of Jiefang Bridge!
   const xiaoyao = new THREE.Group();
-  xiaoyao.position.set(23.5, 0.4, -15.5);
+  xiaoyao.position.set(21.5, 0.4, -13.5);
+  xiaoyao.rotation.y = -0.28;
   const xyStoneMat = new THREE.MeshStandardMaterial({
     color: 0xd8d1c2,
     map: mats.granite.map,

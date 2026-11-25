@@ -215,26 +215,25 @@ export function createTerrainAndWater(scene) {
         float spec = pow(max(dot(N, H), 0.0), 96.0);
         color += uSunColor * spec * mix(1.15, 0.45, uNightFactor);
 
-        // Night reflections under Sun & Moon Pagodas (Shan Lake) and Jiefang Bridge
+        // Night reflections under Sun & Moon Pagodas (Shan Lake) and real Jiefang Bridge
         if (uNightFactor > 0.05) {
-          // Golden Sun Pagoda reflection around (-3, 45)
-          float dSun = length(vWorldPos.xz - vec2(-3.0, 45.0));
+          // Golden Sun Pagoda reflection around (-16, 31)
+          float dSun = length(vWorldPos.xz - vec2(-16.0, 31.0));
           float sunGlow = exp(-dSun * 0.11) * (0.65 + 0.35 * sin(vWorldPos.z * 1.8 + uTime * 3.0));
           color += vec3(1.0, 0.72, 0.22) * sunGlow * uNightFactor * 1.15;
 
-          // Silver-blue Moon Pagoda reflection around (-17, 47)
-          float dMoon = length(vWorldPos.xz - vec2(-17.0, 47.0));
+          // Silver-blue Moon Pagoda reflection around (-27, 33)
+          float dMoon = length(vWorldPos.xz - vec2(-27.0, 33.0));
           float moonGlow = exp(-dMoon * 0.12) * (0.65 + 0.35 * cos(vWorldPos.z * 2.0 - uTime * 2.6));
           color += vec3(0.45, 0.82, 1.0) * moonGlow * uNightFactor * 1.05;
 
-          // Jiefang Bridge warm reflection along z = 0, x in [22, 82]
-          float dBridgeZ = abs(vWorldPos.z - 0.0);
-          float inBridgeX = smoothstep(18.0, 28.0, vWorldPos.x) * (1.0 - smoothstep(74.0, 84.0, vWorldPos.x));
-          float bridgeGlow = exp(-dBridgeZ * 0.2) * inBridgeX * (0.7 + 0.3 * ripple);
+          // Real Jiefang Bridge warm reflection around (30.8, 0.1)
+          float dBridge = length(vWorldPos.xz - vec2(30.8, 0.1));
+          float bridgeGlow = exp(-dBridge * 0.065) * (0.7 + 0.3 * ripple);
           color += vec3(1.0, 0.78, 0.35) * bridgeGlow * uNightFactor * 0.75;
 
-          // Elephant Trunk Hill Water Moon Cave moonlight shimmer around (21, 86)
-          float dEleph = length(vWorldPos.xz - vec2(21.0, 86.0));
+          // Elephant Trunk Hill Water Moon Cave moonlight shimmer around (-16, 84)
+          float dEleph = length(vWorldPos.xz - vec2(-16.0, 84.0));
           color += vec3(0.85, 0.9, 1.0) * exp(-dEleph * 0.12) * uNightFactor * 0.55;
         }
 
@@ -272,7 +271,7 @@ export function createTerrainAndWater(scene) {
   }
 
   // Ronghu Crystal Arch Bridge (榕湖玻璃桥) spanning Rong Lake to island
-  const crystalBridge = createCrystalBridge(-82, 30, 22, bridgeLights);
+  const crystalBridge = createCrystalBridge(-82, 19, 20, bridgeLights);
   crystalBridge.userData = { landmarkId: 'ronghu-gate' };
   bridgesGroup.add(crystalBridge);
 
@@ -360,7 +359,7 @@ function addSlopedBridgeRamps(g, b, deckMat, stoneMat) {
 function createJiefangBridge(b, bridgeLights) {
   const g = new THREE.Group();
   g.position.set(b.cx, 0, b.cz);
-  if (b.axis === 'z') g.rotation.y = Math.PI / 2;
+  g.rotation.y = -b.angle;
 
   const mats = getMaterialsLibrary();
   const length = b.spanLength;
@@ -464,7 +463,7 @@ function createJiefangBridge(b, bridgeLights) {
 function createStoneArchBridge(b, colorHex, bridgeLights) {
   const g = new THREE.Group();
   g.position.set(b.cx, 0, b.cz);
-  if (b.axis === 'z') g.rotation.y = Math.PI / 2;
+  g.rotation.y = -b.angle;
 
   const mats = getMaterialsLibrary();
   const length = b.spanLength;
@@ -573,8 +572,8 @@ function createLakesidePromenade() {
 
   for (let i = 0; i < count; i++) {
     const a = (i / count) * Math.PI * 2;
-    const x = -10 + Math.cos(a) * 23.8;
-    const z = 46 + Math.sin(a) * 15.8;
+    const x = -21 + Math.cos(a) * 18.2;
+    const z = 32 + Math.sin(a) * 12.2;
     if (getWaterDepth(x, z) > 0.05) continue;
     dummy.position.set(x, 0.65, z);
     dummy.rotation.set(0, -a, 0);

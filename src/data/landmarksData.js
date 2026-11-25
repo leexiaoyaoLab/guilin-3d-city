@@ -1,51 +1,58 @@
-// Guilin 3D City - Exact Real-World Map-Tile Aligned Geography & Landmark Metadata
-// Projected from real OSM / Baidu Maps coordinates centered at Jiefang East Rd & East-West Alley (25.2796°N, 110.2945°E)
-// +X = East, -X = West, -Z = North, +Z = South
-//
-// Exact Street & Building Topology:
-// - 解放东路 / 解放西路 (Jiefang Rd): z = 0 (East-West main axis, crosses Li River via 解放桥)
-// - NORTH of 解放东路 (z < 0):
-//     * 东西巷 (East-West Alley): x ∈ [-10..+20], z ∈ [-24..-6] (between Jingjiang Palace south gate and Jiefang East Rd!)
-//     * 逍遥楼 (Xiaoyao Pavilion): (23, -15) at east end of East-West Alley, NW corner of Jiefang Bridge!
-//     * 靖江王府 & 独秀峰: (0, -56) directly north of East-West Alley!
-//     * 伏波山: (34, -58) due east of Solitary Beauty Peak on Li River west bank!
-//     * 叠彩山: (28, -116) north of Fubo Hill on Li River west bank!
-// - SOUTH of 解放东路 (z > 0):
-//     * 正阳步行街 (Zhengyang Pedestrian Street): x = -6, z ∈ [+5..+28] (runs N-S from Jiefang East Rd down to Shan Lake!)
-//     * 杉湖 & 日月双塔: (-10, +46) directly south of Zhengyang St, east of Yangqiao Bridge!
-//     * 中山中路 & 阳桥: x = -40, bridge at (-40, +38) separating Shan Lake (east) & Rong Lake (west)!
-//     * 榕湖 & 古南门: Rong Lake (-70, +26), Ancient South Gate (-64, +7) on Rong Lake north shore!
-//     * 象鼻山 & 桃花江汇流口: (14, +86) south of Shan Lake on Li River west bank!
+// Guilin 3D City - Real Vector Map-Aligned Geography (from real OSM/Baidu road network)
+// Projection origin: (25.2796°N, 110.2945°E) | Scale: 1 unit = 12.5 meters (+X East, -Z North)
+import { REAL_ROADS } from './guilinRealMapData.js';
+
+// Real Li River centerline waypoints extracted directly from downtown Guilin vector map (z sorted North -> South)
+const LI_RIVER_PROFILE = [
+  [34.5, -150],
+  [44.4, -125.2],
+  [55.2, -94.5],
+  [51.6, -65.2],
+  [39.0, -25.3],
+  [30.8, 0.1],    // Exact center of real Jiefang Bridge!
+  [24.5, 10.9],
+  [12.0, 32.0],   // Shan Lake confluence
+  [-0.1, 51.6],
+  [-8.2, 78.2],   // Exact Elephant Trunk Hill & Peach Blossom River confluence!
+  [-10.3, 131.5],
+  [-12.0, 220.0]
+];
 
 export function getLiRiverCenterX(z) {
-  // Real Li River flows NNE -> SSW:
-  // Diecai/Fubo (z=-116..-58): x ≈ 62..58
-  // Jiefang Bridge (z=0): x ≈ 52
-  // Shan Lake confluence (z=+46): x ≈ 44
-  // Elephant Trunk Hill confluence (z=+86): x ≈ 35
-  return 52 - z * 0.16 + Math.sin(z * 0.015) * 5;
+  if (z <= LI_RIVER_PROFILE[0][1]) return LI_RIVER_PROFILE[0][0];
+  const last = LI_RIVER_PROFILE[LI_RIVER_PROFILE.length - 1];
+  if (z >= last[1]) return last[0];
+  for (let i = 0; i < LI_RIVER_PROFILE.length - 1; i++) {
+    const [x0, z0] = LI_RIVER_PROFILE[i];
+    const [x1, z1] = LI_RIVER_PROFILE[i + 1];
+    if (z >= z0 && z <= z1) {
+      const t = (z - z0) / (z1 - z0);
+      return x0 + (x1 - x0) * t;
+    }
+  }
+  return 30.8;
 }
 
 export function getLiRiverHalfWidth(z) {
-  return 19 + Math.sin(z * 0.018 + 0.8) * 2.5;
+  return 13.5 + Math.sin(z * 0.02 + 0.7) * 2.0;
 }
 
 export function getPeachRiverCenterZ(x) {
-  // Flows from WSW (-200, 108) to merge into Li River right at Elephant Trunk Hill (18, 90)
-  const t = Math.max(0, Math.min(1, (x + 200) / 225));
-  return 112 - t * 20 + Math.sin(t * Math.PI * 1.9) * 7;
+  // Real Peach Blossom River enters from WSW (-160, 86) through WenChang Bridge (-47, 79.5) to Li River (-8, 76)
+  const t = Math.max(0, Math.min(1, (x + 160) / 155));
+  return 86 - t * 10 + Math.sin(t * Math.PI * 1.5) * 3.5;
 }
 
 export function getPeachRiverHalfWidth(x) {
-  const t = Math.max(0, Math.min(1, (x + 200) / 225));
-  return 7.5 + t * 2.5;
+  const t = Math.max(0, Math.min(1, (x + 160) / 155));
+  return 5.8 + t * 2.0;
 }
 
 // Check if a point (x, z) is inside any water body (returns depth > 0 if in water)
 export function getWaterDepth(x, z) {
   let depth = 0;
 
-  // 1. Li River (漓江)
+  // 1. Real curved Li River (漓江)
   const liX = getLiRiverCenterX(z);
   const liHalfW = getLiRiverHalfWidth(z);
   const distLi = Math.abs(x - liX);
@@ -53,8 +60,8 @@ export function getWaterDepth(x, z) {
     depth = Math.max(depth, (1 - distLi / liHalfW) * 4.2);
   }
 
-  // 2. Peach Blossom River (桃花江) - west of Li River, merging at Elephant Trunk Hill
-  if (x < liX + 4) {
+  // 2. Real Peach Blossom River (桃花江) - west of Li River, merging at Elephant Trunk Hill (-8, 76)
+  if (x < liX + 3) {
     const peachZ = getPeachRiverCenterZ(x);
     const peachHalfW = getPeachRiverHalfWidth(x);
     const distPeach = Math.abs(z - peachZ);
@@ -63,54 +70,53 @@ export function getWaterDepth(x, z) {
     }
   }
 
-  // 3. Shan Lake (杉湖) - South of Zhengyang Pedestrian Street, East of Yangqiao (-40)
-  // Centered at (-10, 46), rx=23, rz=15
+  // 3. Shan Lake (杉湖) - East of Yangqiao (-40, 24), South of Zhengyang St (-6, +4)
+  // Real map bounds: x ∈ [-38..-5], z ∈ [22..42], centered at (-21, 32)
   {
-    const dx = (x - (-10)) / 23;
-    const dz = (z - 46) / 15;
+    const dx = (x - (-21)) / 17.5;
+    const dz = (z - 32) / 11.5;
     const r = Math.sqrt(dx * dx + dz * dz);
     if (r < 1) {
-      depth = Math.max(depth, (1 - r) * 3.5);
+      depth = Math.max(depth, (1 - r) * 3.4);
     }
   }
 
-  // 4. Rong Lake (榕湖) - West of Yangqiao (-40), slightly northwest of Shan Lake
-  // Centered at (-72, 30), rx=28, rz=17
+  // 4. Rong Lake (榕湖) - West of Yangqiao (-40, 24), South of Ancient South Gate (-68, 6)
+  // Real map bounds: x ∈ [-102..-42], z ∈ [7..31], centered at (-72, 19)
   {
-    const dx = (x - (-72)) / 28;
-    const dz = (z - 30) / 17;
+    const dx = (x - (-72)) / 27;
+    const dz = (z - 19) / 13.5;
     const r = Math.sqrt(dx * dx + dz * dz);
-    // Scenic island at (-74, 32)
-    const idx = (x - (-74)) / 6.2;
-    const idz = (z - 32) / 4.4;
+    const idx = (x - (-75)) / 5.8;
+    const idz = (z - 21) / 3.8;
     const ir = Math.sqrt(idx * idx + idz * idz);
     if (r < 1 && ir > 1.0) {
-      const lakeD = (1 - r) * 3.5;
+      const lakeD = (1 - r) * 3.4;
       const islandEdge = Math.min(1, (ir - 1.0) * 3.5);
       depth = Math.max(depth, lakeD * islandEdge);
     }
   }
 
-  // 5. Canal connecting Rong Lake and Shan Lake under Yangqiao Bridge (x in [-48, -31], z around 38)
-  if (x >= -48 && x <= -30) {
-    const distC = Math.abs(z - 38);
-    if (distC < 4.6) {
-      depth = Math.max(depth, (1 - distC / 4.6) * 2.6);
+  // 5. Canal connecting Rong Lake and Shan Lake under Yangqiao Bridge (-40, 25)
+  if (x >= -48 && x <= -33) {
+    const distC = Math.abs(z - 25.5);
+    if (distC < 4.2) {
+      depth = Math.max(depth, (1 - distC / 4.2) * 2.5);
     }
   }
 
-  // 6. Canal connecting Shan Lake to Li River (x in [10, liX], z around 46)
-  if (x >= 10 && x <= liX) {
-    const distC = Math.abs(z - 46);
-    if (distC < 4.2) {
-      depth = Math.max(depth, (1 - distC / 4.2) * 2.6);
+  // 6. Canal connecting Shan Lake to Li River (x in [-6..liX], z around 33)
+  if (x >= -6 && x <= liX) {
+    const distC = Math.abs(z - 33);
+    if (distC < 3.6) {
+      depth = Math.max(depth, (1 - distC / 3.6) * 2.5);
     }
   }
 
   return depth;
 }
 
-export function isWaterOrShore(x, z, margin = 5.5) {
+export function isWaterOrShore(x, z, margin = 4.8) {
   if (getWaterDepth(x, z) > 0.02) return true;
   if (
     getWaterDepth(x + margin, z) > 0.05 ||
@@ -123,89 +129,127 @@ export function isWaterOrShore(x, z, margin = 5.5) {
   return false;
 }
 
-// Real Guilin Downtown Road Grid
-export function isOnRoad(x, z, extraMargin = 0) {
-  // 中山中路 (Zhongshan Central Rd): x = -40 (crosses Yangqiao Bridge & Peach Bridge)
-  if (Math.abs(x - (-40)) < 4.8 + extraMargin && z > -135 && z < 135) return true;
-  // 解放东路 / 解放西路 (Jiefang Rd): z = 0 (North = East-West Alley & Xiaoyao Pavilion, South = Zhengyang St)
-  if (Math.abs(z - 0) < 5.0 + extraMargin && x > -145 && x < 145) return true;
-  // 杉湖北路 / 榕湖北路 (Lakeside North Ave): z = 25 (between Zhengyang St & Shan Lake)
-  if (Math.abs(z - 25) < 3.6 + extraMargin && x > -125 && x < 24) return true;
-  // 文明路 / 南环路 (Wenming Ave): z = 67 (south of Shan Lake)
-  if (Math.abs(z - 67) < 3.6 + extraMargin && x > -130 && x < 14) return true;
-  // 西城路 (West Ring Rd): x = -112
-  if (Math.abs(x - (-112)) < 3.8 + extraMargin && z > -120 && z < 110) return true;
-  // 凤北路 (Fengbei North Ave): z = -84
-  if (Math.abs(z - (-84)) < 3.6 + extraMargin && x > -120 && x < 26) return true;
-  // 滨江路 (Binjiang Waterfront Rd): west bank of Li River
-  const binjiangX = getLiRiverCenterX(z) - getLiRiverHalfWidth(z) - 6.5;
-  if (Math.abs(x - binjiangX) < 3.6 + extraMargin && z > -125 && z < 115) return true;
-  // 漓江东路 (East Bank Waterfront Rd)
-  const eastRoadX = getLiRiverCenterX(z) + getLiRiverHalfWidth(z) + 7.5;
-  if (Math.abs(x - eastRoadX) < 3.6 + extraMargin && z > -115 && z < 105) return true;
+// Fast point-to-segment squared distance helper for exact real-road collision & building exclusion
+function distToSegmentSq(px, pz, ax, az, bx, bz) {
+  const vx = bx - ax;
+  const vz = bz - az;
+  const wx = px - ax;
+  const wz = pz - az;
+  const c1 = vx * wx + vz * wz;
+  if (c1 <= 0) return wx * wx + wz * wz;
+  const c2 = vx * vx + vz * vz;
+  if (c2 <= c1) {
+    const dx = px - bx;
+    const dz = pz - bz;
+    return dx * dx + dz * dz;
+  }
+  const t = c1 / c2;
+  const projX = ax + t * vx;
+  const projZ = az + t * vz;
+  const dx = px - projX;
+  const dz = pz - projZ;
+  return dx * dx + dz * dz;
+}
 
+// Precompute bounding boxes for all 214 real vector roads for ultra-fast lookup
+const ROAD_BBOXES = REAL_ROADS.map((rd) => {
+  let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+  for (const [x, z] of rd.pts) {
+    if (x < minX) minX = x;
+    if (x > maxX) maxX = x;
+    if (z < minZ) minZ = z;
+    if (z > maxZ) maxZ = z;
+  }
+  return { rd, minX, maxX, minZ, maxZ };
+});
+
+// Exact check against ALL 214 real curved vector roads from downtown Guilin!
+export function isOnRoad(x, z, extraMargin = 0) {
+  for (let i = 0; i < ROAD_BBOXES.length; i++) {
+    const item = ROAD_BBOXES[i];
+    const halfW = item.rd.width * 0.5 + extraMargin;
+    if (x < item.minX - halfW || x > item.maxX + halfW || z < item.minZ - halfW || z > item.maxZ + halfW) {
+      continue;
+    }
+    const pts = item.rd.pts;
+    const threshSq = halfW * halfW;
+    for (let j = 0; j < pts.length - 1; j++) {
+      if (distToSegmentSq(x, z, pts[j][0], pts[j][1], pts[j + 1][0], pts[j + 1][1]) <= threshSq) {
+        return true;
+      }
+    }
+  }
   return false;
 }
 
+// Bridges positioned at their EXACT real map coordinates and true diagonal headings (angle = atan2(dz, dx) in XZ plane)
 export const BRIDGES = [
   {
     id: 'jiefang-bridge',
     name: '解放桥',
-    axis: 'x',
-    cx: getLiRiverCenterX(0),
-    cz: 0,
-    spanLength: 46,
-    rampLength: 15,
-    width: 9.2,
+    cx: 30.8,
+    cz: 0.1,
+    angle: Math.atan2(7.1, 21.6), // Real ~+18.2° WNW -> ESE heading matching 解放东路!
+    spanLength: 28,
+    rampLength: 12,
+    width: 8.6,
     baseY: 0.58,
-    deckY: 3.85,
+    deckY: 3.65,
     style: 'jiefang'
   },
   {
     id: 'yangqiao-bridge',
     name: '阳桥',
-    axis: 'z',
-    cx: -40,
-    cz: 38,
-    spanLength: 12,
-    rampLength: 8.5,
-    width: 7.8,
+    cx: -40.0,
+    cz: 25.5,
+    angle: Math.PI / 2 + 0.24, // Real NNE -> SSW Zhongshan Rd heading!
+    spanLength: 10,
+    rampLength: 7.5,
+    width: 7.6,
     baseY: 0.58,
-    deckY: 2.35,
+    deckY: 2.25,
+    style: 'stone'
+  },
+  {
+    id: 'wenchang-bridge',
+    name: '文昌桥',
+    cx: -47.2,
+    cz: 79.5,
+    angle: Math.PI / 2 + 0.22, // Real WenChang Bridge over Peach Blossom River!
+    spanLength: 14,
+    rampLength: 8.0,
+    width: 7.6,
+    baseY: 0.58,
+    deckY: 2.45,
     style: 'stone'
   },
   {
     id: 'binjiang-bridge',
     name: '滨江拱桥',
-    axis: 'z',
-    cx: 18,
-    cz: 46,
-    spanLength: 10,
-    rampLength: 7.0,
-    width: 5.4,
+    cx: 0.0,
+    cz: 33.0,
+    angle: Math.PI / 2 + 0.28,
+    spanLength: 9,
+    rampLength: 6.5,
+    width: 5.2,
     baseY: 0.58,
-    deckY: 2.2,
-    style: 'stone'
-  },
-  {
-    id: 'peach-bridge',
-    name: '桃花江大桥',
-    axis: 'z',
-    cx: -40,
-    cz: getPeachRiverCenterZ(-40),
-    spanLength: 18,
-    rampLength: 9.5,
-    width: 8.0,
-    baseY: 0.58,
-    deckY: 2.55,
+    deckY: 2.15,
     style: 'stone'
   }
 ];
 
+/**
+ * Exact bridge surface elevation at world (x, z) supporting arbitrary real-map bridge headings!
+ */
 export function getBridgeSurfaceY(x, z, extraWidth = 0) {
   for (const b of BRIDGES) {
-    const along = b.axis === 'x' ? Math.abs(x - b.cx) : Math.abs(z - b.cz);
-    const across = b.axis === 'x' ? Math.abs(z - b.cz) : Math.abs(x - b.cx);
+    const dx = x - b.cx;
+    const dz = z - b.cz;
+    const cosA = Math.cos(b.angle);
+    const sinA = Math.sin(b.angle);
+    // Project onto bridge local longitudinal (along) and transverse (across) axes
+    const along = Math.abs(dx * cosA + dz * sinA);
+    const across = Math.abs(-dx * sinA + dz * cosA);
     const halfSpan = b.spanLength / 2;
     const totalHalf = halfSpan + b.rampLength;
 
@@ -218,11 +262,11 @@ export function getBridgeSurfaceY(x, z, extraWidth = 0) {
     }
   }
 
-  // Ronghu Crystal Bridge (榕湖玻璃桥) centered around (-82, 30)
-  const dCrystal = Math.hypot(x - (-82), z - 30);
-  if (dCrystal < 11.2) {
-    const arch = Math.max(0, 1 - dCrystal / 11.2);
-    return 0.58 + arch * 2.35;
+  // Ronghu Crystal Bridge (榕湖玻璃桥) centered around (-82, 19)
+  const dCrystal = Math.hypot(x - (-82), z - 19);
+  if (dCrystal < 10.5) {
+    const arch = Math.max(0, 1 - dCrystal / 10.5);
+    return 0.58 + arch * 2.25;
   }
 
   return null;
@@ -233,12 +277,12 @@ export const LANDMARKS = [
     id: 'overview',
     name: '桂林全景',
     enName: 'Guilin Panorama',
-    category: '全城视角 · 精准地图格局',
+    category: '实景路网 · 精确地图投影',
     elevation: '海拔 150m 盆地',
-    description: '严格依据桂林实景瓦片地图分布：以解放东路为东西中轴，北侧为靖江王府、东西巷与江畔逍遥楼（东临伏波山/叠彩山），南侧为正阳步行街、杉湖日月双塔与象鼻山，西侧经阳桥连接榕湖古南门。',
-    position: [0, 0, 10],
-    cameraPos: [-88, 96, 152],
-    cameraTarget: [2, 8, 12]
+    description: '基于桂林市中心真实矢量路网（214 条实景道路曲线）与经纬度精确投影构建：解放西路—十字街—解放东路—解放桥呈真实的西北—东南走向，中山中路与正阳步行街与之垂直交汇，完整还原两江四湖与喀斯特名山。',
+    position: [-15, 0, 10],
+    cameraPos: [-98, 96, 138],
+    cameraTarget: [-8, 8, 10]
   },
   {
     id: 'elephant-hill',
@@ -246,10 +290,10 @@ export const LANDMARKS = [
     enName: 'Elephant Trunk Hill',
     category: '桂林城徽 · 5A景区',
     elevation: '山高 55m · 普贤塔',
-    description: '位于桂林城区南部漓江与桃花江汇流处（杉湖南侧），酷似俯身痛饮漓江水的巨象，象鼻与象身间形成水月洞，山顶矗立明代普贤塔。',
-    position: [14, 14, 86],
-    cameraPos: [76, 28, 126],
-    cameraTarget: [16, 10, 86]
+    description: '位于桂林城区南部漓江与桃花江真实汇流处（滨江路南端、文昌桥以东），酷似俯身饮江的巨象，山顶矗立明代普贤塔。',
+    position: [-24, 14, 84],
+    cameraPos: [36, 28, 124],
+    cameraTarget: [-20, 10, 84]
   },
   {
     id: 'twin-pagodas',
@@ -257,10 +301,10 @@ export const LANDMARKS = [
     enName: 'Sun & Moon Twin Pagodas',
     category: '两江四湖地标',
     elevation: '日塔41m · 月塔35m',
-    description: '屹立于市中心杉湖碧波之上（阳桥以东、正阳步行街正南），东侧九级铜金日塔与西侧七级琉璃月塔交相辉映，水下玻璃通道相连。',
-    position: [-10, 16, 46],
-    cameraPos: [-8, 22, 86],
-    cameraTarget: [-10, 12, 46]
+    description: '屹立于阳桥以东、正阳步行街南端的杉湖碧波之上，东侧九级铜金日塔与西侧七级琉璃月塔交相辉映。',
+    position: [-21, 16, 32],
+    cameraPos: [-18, 22, 72],
+    cameraTarget: [-21, 12, 32]
   },
   {
     id: 'jingjiang-palace',
@@ -268,10 +312,10 @@ export const LANDMARKS = [
     enName: 'Solitary Beauty Peak & Palace',
     category: '明代藩王城 · 历史核心',
     elevation: '峰高 66m · 南天一柱',
-    description: '坐落于东西巷正北侧，独秀峰拔地而起，明代靖江王府依峰而建；出承运门与正阳门向南即为东西巷与解放东路。',
-    position: [0, 16, -56],
-    cameraPos: [0, 38, -2],
-    cameraTarget: [0, 14, -56]
+    description: '坐落于东西巷与解放东路北侧，独秀峰拔地而起，东与漓江畔伏波山隔街遥望，南出承运门与正阳门即达东西巷。',
+    position: [3, 16, -56],
+    cameraPos: [3, 38, -2],
+    cameraTarget: [3, 14, -56]
   },
   {
     id: 'jiefang-bridge',
@@ -279,10 +323,10 @@ export const LANDMARKS = [
     enName: 'Jiefang Bridge & Xiaoyao Pavilion',
     category: '城市动脉 · 历史江畔',
     elevation: '跨漓江主桥 · 逍遥楼',
-    description: '解放东路向东跨漓江即解放桥；桥西北角矗立唐代名楼逍遥楼，紧连解放东路北侧的东西巷古街，路南侧即为正阳步行街。',
-    position: [52, 6, 0],
-    cameraPos: [104, 34, 42],
-    cameraTarget: [36, 8, -4]
+    description: '解放东路沿真实西北—东南轴线跨越漓江即解放桥；桥西北角矗立唐代名楼逍遥楼，紧邻解放东路北侧的东西巷古街，路南侧即为正阳步行街。',
+    position: [31, 6, 0],
+    cameraPos: [84, 34, 42],
+    cameraTarget: [20, 8, -6]
   },
   {
     id: 'ronghu-gate',
@@ -290,10 +334,10 @@ export const LANDMARKS = [
     enName: 'Rong Lake & Ancient South Gate',
     category: '唐代古城遗址',
     elevation: '千年古榕相伴',
-    description: '位于阳桥以西的榕湖北岸，始建于唐代，门畔千年古榕枝繁叶茂，向东南可望阳桥与杉湖日月双塔。',
-    position: [-64, 8, 12],
-    cameraPos: [-106, 28, 56],
-    cameraTarget: [-66, 6, 24]
+    description: '位于阳桥以西的榕湖北岸（榕湖北路旁），始建于唐代，门畔千年古榕枝繁叶茂。',
+    position: [-68, 8, 6],
+    cameraPos: [-108, 28, 48],
+    cameraTarget: [-68, 6, 16]
   },
   {
     id: 'fubo-diecai',
@@ -301,10 +345,10 @@ export const LANDMARKS = [
     enName: 'Fubo & Diecai Hills',
     category: '滨江奇峰',
     elevation: '江畔孤峰 · 拿云亭',
-    description: '位于解放桥正北的漓江西岸：伏波山与独秀峰东西遥望，再向北为层峦叠翠的叠彩山与山顶拿云亭。',
-    position: [32, 22, -84],
-    cameraPos: [104, 42, -62],
-    cameraTarget: [32, 16, -84]
+    description: '位于解放桥以北的漓江西岸：伏波山与独秀峰同纬度东西遥望，向北沿滨江路即为叠彩山。',
+    position: [36, 22, -88],
+    cameraPos: [108, 42, -68],
+    cameraTarget: [36, 16, -88]
   },
   {
     id: 'river-cruise',
@@ -312,9 +356,9 @@ export const LANDMARKS = [
     enName: 'Li River Boat POV',
     category: '沉浸游船',
     elevation: '水面低空视角',
-    description: '乘一叶竹筏或画舫沿漓江顺流而下，自北向南依次经过叠彩山、伏波山、逍遥楼、解放桥与象鼻山，感受“舟行碧波上，人在画中游”。',
-    position: [44, 3, 52],
-    cameraPos: [48, 6.2, 118],
-    cameraTarget: [34, 11, 48]
+    description: '乘一叶竹筏或画舫沿真实的东北—西南弯曲漓江顺流而下，依次经过叠彩山、伏波山、逍遥楼、解放桥与象鼻山。',
+    position: [12, 3, 45],
+    cameraPos: [4, 6.2, 108],
+    cameraTarget: [8, 11, 40]
   }
 ];

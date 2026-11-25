@@ -1,11 +1,10 @@
 import * as THREE from 'three';
 import {
-  BRIDGES,
-  getLiRiverCenterX,
-  getLiRiverHalfWidth,
+  getBridgeSurfaceY,
   isWaterOrShore,
   isOnRoad
 } from '../data/landmarksData.js';
+import { REAL_ROADS } from '../data/guilinRealMapData.js';
 import {
   createArchitecturalFacadeTextures,
   getMaterialsLibrary
@@ -105,21 +104,21 @@ function createBuildingTextures(styleIndex) {
  */
 function isProtectedZone(x, z) {
   const exclusionZones = [
-    [14, 86, 25],     // Elephant Trunk Hill
-    [0, -56, 27],     // Solitary Beauty Peak & Jingjiang Palace
-    [34, -58, 18],    // Fubo Hill
-    [28, -116, 24],   // Diecai Hill
-    [-10, 46, 27],    // Shan Lake
-    [-72, 30, 32],    // Rong Lake
-    [-64, 11, 14],    // Ancient South Gate square
-    [3, -17, 19],     // East-West Alley (North of Jiefang Rd)
-    [23.5, -15.5, 13],// Xiaoyao Pavilion (NW corner of Jiefang Bridge)
-    [-6, 13, 14],     // Zhengyang Pedestrian Street (South of Jiefang Rd)
-    [110, -12, 24],   // Seven Star Park Peak 1
-    [132, 8, 25],     // Seven Star Park Peak 2
-    [114, 30, 22],    // Seven Star Park Peak 3
-    [106, 96, 24],    // Chuanshan
-    [85, 106, 16]     // Tashan
+    [-24, 84, 24],    // Elephant Trunk Hill (real confluence!)
+    [3, -56, 27],     // Solitary Beauty Peak & Jingjiang Palace
+    [36, -62, 18],    // Fubo Hill
+    [32, -118, 24],   // Diecai Hill
+    [-21, 32, 22],    // Shan Lake
+    [-72, 19, 30],    // Rong Lake
+    [-68, 6, 13],     // Ancient South Gate
+    [1, -20, 17],     // East-West Alley (north of real diagonal Jiefang East Rd)
+    [21, -13, 12],    // Xiaoyao Pavilion (NW corner of Jiefang Bridge)
+    [-6, 2, 12],      // Zhengyang Pedestrian Street (south of Jiefang East Rd)
+    [95, -8, 24],     // Seven Star Park Peak 1
+    [118, 12, 25],    // Seven Star Park Peak 2
+    [102, 34, 22],    // Seven Star Park Peak 3
+    [82, 92, 24],     // Chuanshan
+    [62, 102, 16]     // Tashan
   ];
 
   for (const [ex, ez, er] of exclusionZones) {
@@ -131,7 +130,7 @@ function isProtectedZone(x, z) {
 }
 
 /**
- * Build Guilin's Urban Road Network with lane dashes & glowing streetlights
+ * Build Guilin's EXACT Real-World Vector Road Network from guilinRealMapData.js (214 real curved streets!)
  */
 function createRoadNetwork(nightGlowMats) {
   const group = new THREE.Group();
@@ -146,7 +145,19 @@ function createRoadNetwork(nightGlowMats) {
     roughness: 0.86,
     metalness: 0.05
   });
-  const dashMat = new THREE.MeshStandardMaterial({ color: 0xe6dcc4, roughness: 0.7 });
+  const secondaryMat = new THREE.MeshStandardMaterial({
+    color: 0x4b5058,
+    bumpMap: mats.asphalt.bumpMap,
+    bumpScale: 0.1,
+    roughness: 0.88
+  });
+  const pedestrianMat = new THREE.MeshStandardMaterial({
+    color: 0xcbc2b2,
+    map: mats.granite.map,
+    bumpMap: mats.granite.bumpMap,
+    bumpScale: 0.14,
+    roughness: 0.78
+  });
   const poleMat = new THREE.MeshStandardMaterial({ color: 0x32363b, metalness: 0.5, roughness: 0.5 });
   const lampBulbMat = new THREE.MeshStandardMaterial({
     color: 0xfff0c2,
@@ -155,100 +166,55 @@ function createRoadNetwork(nightGlowMats) {
   });
   nightGlowMats.push(lampBulbMat);
 
-  function addStraightRoad(x1, z1, x2, z2, width) {
-    const dx = x2 - x1;
-    const dz = z2 - z1;
-    const len = Math.sqrt(dx * dx + dz * dz);
-    const angle = Math.atan2(dx, dz);
-
-    const mesh = new THREE.Mesh(new THREE.BoxGeometry(width, 0.18, len), asphaltMat);
-    mesh.position.set((x1 + x2) / 2, 0.52, (z1 + z2) / 2);
-    mesh.rotation.y = angle;
-    mesh.receiveShadow = true;
-    group.add(mesh);
-
-    // Center dashed lane markings
-    const dashCount = Math.floor(len / 7);
-    for (let i = 1; i < dashCount; i++) {
-      const t = i / dashCount;
-      const px = x1 + dx * t;
-      const pz = z1 + dz * t;
-      if (isWaterOrShore(px, pz, 2.5)) continue;
-      const dash = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.21, 2.6), dashMat);
-      dash.position.set(px, 0.54, pz);
-      dash.rotation.y = angle;
-      group.add(dash);
-    }
-  }
-
-  // Main urban avenues
-  // 1. 中山中路 (Zhongshan Central Rd) - North-South x = -40, meeting Yangqiao & Peach Bridge ramps cleanly
-  const yangqiao = BRIDGES.find((b) => b.id === 'yangqiao-bridge');
-  const peachB = BRIDGES.find((b) => b.id === 'peach-bridge');
-  const yqHalf = yangqiao.spanLength / 2 + yangqiao.rampLength;
-  const pbHalf = peachB.spanLength / 2 + peachB.rampLength;
-  addStraightRoad(-40, -130, -40, yangqiao.cz - yqHalf, 7.6);
-  addStraightRoad(-40, yangqiao.cz + yqHalf, -40, peachB.cz - pbHalf, 7.6);
-  addStraightRoad(-40, peachB.cz + pbHalf, -40, 132, 7.6);
-
-  // 2. 解放东路 / 解放西路 (Jiefang Rd) - East-West z = 0, meeting Jiefang Bridge approach ramp toes cleanly
-  const jiefang = BRIDGES.find((b) => b.id === 'jiefang-bridge');
-  const jfHalf = jiefang.spanLength / 2 + jiefang.rampLength;
-  addStraightRoad(-138, 0, jiefang.cx - jfHalf, 0, 8.2);
-  addStraightRoad(jiefang.cx + jfHalf, 0, 132, 0, 8.2);
-
-  // 3. 杉湖/榕湖北路 (Lakeside North Ave) z = 25
-  addStraightRoad(-122, 25, 24, 25, 5.8);
-
-  // 4. 文明路 / 南环路 (South City Ave) z = 67
-  addStraightRoad(-126, 67, 14, 67, 5.8);
-
-  // 5. 西城路 (West Ring Rd) x = -112
-  addStraightRoad(-112, -112, -112, 102, 6.2);
-
-  // 6. 凤北路 (North Ave) z = -84
-  addStraightRoad(-116, -84, 24, -84, 5.8);
-
-  // 7. 滨江路 (Binjiang Scenic Waterfront Rd) following Li River West Bank
-  const binjiangPts = [];
-  for (let z = -118; z <= 105; z += 10) {
-    const x = getLiRiverCenterX(z) - getLiRiverHalfWidth(z) - 6.8;
-    binjiangPts.push(new THREE.Vector3(x, 0.56, z));
-  }
-  const binjiangCurve = new THREE.CatmullRomCurve3(binjiangPts);
-  const bSegs = 44;
-  for (let i = 0; i < bSegs; i++) {
-    const p1 = binjiangCurve.getPoint(i / bSegs);
-    const p2 = binjiangCurve.getPoint((i + 1) / bSegs);
-    if (isWaterOrShore((p1.x + p2.x) / 2, (p1.z + p2.z) / 2, 0.5)) continue;
-    addStraightRoad(p1.x, p1.z, p2.x, p2.z, 5.6);
-  }
-
-  // 8. 漓江东路 (East Bank Waterfront Rd)
-  const eastPts = [];
-  for (let z = -105; z <= 95; z += 12) {
-    const x = getLiRiverCenterX(z) + getLiRiverHalfWidth(z) + 7.5;
-    eastPts.push(new THREE.Vector3(x, 0.56, z));
-  }
-  const eastCurve = new THREE.CatmullRomCurve3(eastPts);
-  for (let i = 0; i < 36; i++) {
-    const p1 = eastCurve.getPoint(i / 36);
-    const p2 = eastCurve.getPoint((i + 1) / 36);
-    if (isWaterOrShore((p1.x + p2.x) / 2, (p1.z + p2.z) / 2, 0.5)) continue;
-    addStraightRoad(p1.x, p1.z, p2.x, p2.z, 5.6);
-  }
-
-  // Instanced Streetlights along main avenues
   const lampPositions = [];
-  for (let z = -115; z <= 100; z += 16) {
-    if (!isWaterOrShore(-35.5, z, 2)) lampPositions.push([-35.5, z]);
-    if (!isWaterOrShore(-44.5, z, 2)) lampPositions.push([-44.5, z]);
-    const bx = getLiRiverCenterX(z) - getLiRiverHalfWidth(z) - 3.6;
-    if (!isWaterOrShore(bx, z, 1.5)) lampPositions.push([bx, z]);
-  }
-  for (let x = -125; x <= 115; x += 16) {
-    if (!isWaterOrShore(x, 4.5, 2.5)) lampPositions.push([x, 4.5]);
-    if (!isWaterOrShore(x, -4.5, 2.5)) lampPositions.push([x, -4.5]);
+  let lampAccum = 0;
+
+  for (const rd of REAL_ROADS) {
+    const pts = rd.pts;
+    const isMajor = rd.type === 'primary' || rd.type === 'secondary';
+    const isPed = rd.type === 'pedestrian';
+    const mat = isMajor ? asphaltMat : isPed ? pedestrianMat : secondaryMat;
+    const yLayer = isMajor ? 0.55 : isPed ? 0.53 : 0.51;
+
+    for (let i = 0; i < pts.length - 1; i++) {
+      const [x1, z1] = pts[i];
+      const [x2, z2] = pts[i + 1];
+      const mx = (x1 + x2) / 2;
+      const mz = (z1 + z2) / 2;
+
+      // Skip segments inside deep water or already covered by our 3D sloped bridge decks
+      if (getBridgeSurfaceY(mx, mz, 1.5) !== null) continue;
+      if (isWaterOrShore(mx, mz, 0.4)) continue;
+
+      const dx = x2 - x1;
+      const dz = z2 - z1;
+      const len = Math.hypot(dx, dz);
+      if (len < 0.3) continue;
+
+      const angle = Math.atan2(dx, dz);
+      // Slight overlap (+0.5) ensures curved segments join seamlessly without gaps at bends
+      const seg = new THREE.Mesh(new THREE.BoxGeometry(rd.width, 0.14, len + 0.5), mat);
+      seg.position.set(mx, yLayer, mz);
+      seg.rotation.y = angle;
+      seg.receiveShadow = true;
+      group.add(seg);
+
+      // Place streetlights evenly along real primary & secondary roads
+      if (isMajor && lampPositions.length < 220) {
+        lampAccum += len;
+        if (lampAccum >= 18) {
+          lampAccum = 0;
+          const nx = -dz / len;
+          const nz = dx / len;
+          const sideDist = rd.width * 0.5 + 0.85;
+          const lx = mx + nx * sideDist;
+          const lz = mz + nz * sideDist;
+          if (!isWaterOrShore(lx, lz, 1.0)) {
+            lampPositions.push([lx, lz]);
+          }
+        }
+      }
+    }
   }
 
   const poleInst = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.09, 0.12, 3.2, 5), poleMat, lampPositions.length);

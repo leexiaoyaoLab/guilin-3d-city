@@ -47,19 +47,19 @@ export function createSimulation(scene) {
   const liRouteDown = new THREE.CatmullRomCurve3(liNorthPts);
   const liRouteUp = new THREE.CatmullRomCurve3(liSouthPts);
 
-  // Route B: Shan Lake (杉湖) loop around Sun & Moon Twin Pagodas (-10, 46)
+  // Route B: Shan Lake (杉湖) loop around Sun & Moon Twin Pagodas (-21, 32)
   const shanLoopPts = [];
   for (let i = 0; i < 16; i++) {
     const a = (i / 16) * Math.PI * 2;
-    shanLoopPts.push(new THREE.Vector3(-10 + Math.cos(a) * 17.5, 0.05, 46 + Math.sin(a) * 10.5));
+    shanLoopPts.push(new THREE.Vector3(-21 + Math.cos(a) * 13.5, 0.05, 32 + Math.sin(a) * 8.2));
   }
   const shanRoute = new THREE.CatmullRomCurve3(shanLoopPts, true);
 
-  // Route C: Rong Lake (榕湖) loop around the Central Island (-72, 30)
+  // Route C: Rong Lake (榕湖) loop around the Central Island (-72, 19)
   const rongLoopPts = [];
   for (let i = 0; i < 16; i++) {
     const a = (i / 16) * Math.PI * 2;
-    rongLoopPts.push(new THREE.Vector3(-72 + Math.cos(a) * 20.0, 0.05, 30 + Math.sin(a) * 11.8));
+    rongLoopPts.push(new THREE.Vector3(-72 + Math.cos(a) * 18.5, 0.05, 19 + Math.sin(a) * 9.5));
   }
   const rongRoute = new THREE.CatmullRomCurve3(rongLoopPts, true);
 
@@ -184,44 +184,35 @@ export function createSimulation(scene) {
   // 2. ROAD VEHICLES & CITY BUSES (城市车流)
   // =========================================================
   const roadPaths = [
-    // Jiefang Rd Eastbound & Westbound (z = 0, crossing Jiefang Bridge!)
+    // Real diagonal Jiefang West Rd -> Shizijie -> Jiefang East Rd -> Jiefang Bridge (Eastbound & Westbound!)
     new THREE.CatmullRomCurve3([
-      new THREE.Vector3(-135, 0.72, 1.8),
-      new THREE.Vector3(14, 0.72, 1.8),
-      new THREE.Vector3(52, 3.95, 1.8),
-      new THREE.Vector3(88, 0.72, 1.8),
-      new THREE.Vector3(128, 0.72, 1.8)
+      new THREE.Vector3(-73, 0.72, -29.2),
+      new THREE.Vector3(-25.4, 0.72, -15.2),
+      new THREE.Vector3(20.0, 0.72, -2.0),
+      new THREE.Vector3(41.3, 0.72, 5.1),
+      new THREE.Vector3(82, 0.72, -1.5)
     ]),
     new THREE.CatmullRomCurve3([
-      new THREE.Vector3(128, 0.72, -1.8),
-      new THREE.Vector3(88, 0.72, -1.8),
-      new THREE.Vector3(52, 3.95, -1.8),
-      new THREE.Vector3(14, 0.72, -1.8),
-      new THREE.Vector3(-135, 0.72, -1.8)
+      new THREE.Vector3(82, 0.72, -4.5),
+      new THREE.Vector3(41.6, 0.72, 1.4),
+      new THREE.Vector3(20.3, 0.72, -5.8),
+      new THREE.Vector3(-25.4, 0.72, -18.8),
+      new THREE.Vector3(-73, 0.72, -32.8)
     ]),
-    // Zhongshan Central Rd Southbound & Northbound (x = -40, crossing Yangqiao & Peach Bridges!)
+    // Real Zhongshan Central Rd (NNE -> SSW through Shizijie, Yangqiao Bridge, WenChang Bridge!)
     new THREE.CatmullRomCurve3([
-      new THREE.Vector3(-38.2, 0.72, -125),
-      new THREE.Vector3(-38.2, 0.72, 24),
-      new THREE.Vector3(-38.2, 2.52, 38),
-      new THREE.Vector3(-38.2, 0.72, 52),
-      new THREE.Vector3(-38.2, 0.72, 118)
-    ]),
-    new THREE.CatmullRomCurve3([
-      new THREE.Vector3(-41.8, 0.72, 118),
-      new THREE.Vector3(-41.8, 0.72, 52),
-      new THREE.Vector3(-41.8, 2.52, 38),
-      new THREE.Vector3(-41.8, 0.72, 24),
-      new THREE.Vector3(-41.8, 0.72, -125)
-    ]),
-    // Lakeside North Boulevard (z = 25)
-    new THREE.CatmullRomCurve3([
-      new THREE.Vector3(-118, 0.72, 26.1),
-      new THREE.Vector3(20, 0.72, 26.1)
+      new THREE.Vector3(-12, 0.72, -88),
+      new THREE.Vector3(-25, 0.72, -17),
+      new THREE.Vector3(-38.5, 0.72, 25.5),
+      new THREE.Vector3(-46.0, 0.72, 79.5),
+      new THREE.Vector3(-54, 0.72, 112)
     ]),
     new THREE.CatmullRomCurve3([
-      new THREE.Vector3(20, 0.72, 23.9),
-      new THREE.Vector3(-118, 0.72, 23.9)
+      new THREE.Vector3(-57, 0.72, 112),
+      new THREE.Vector3(-48.5, 0.72, 79.5),
+      new THREE.Vector3(-41.5, 0.72, 25.5),
+      new THREE.Vector3(-28, 0.72, -17),
+      new THREE.Vector3(-15, 0.72, -88)
     ])
   ];
 

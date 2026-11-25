@@ -76,7 +76,7 @@ export function createPhysicsWorld() {
     return body;
   }
 
-  // 2. Build Exact Sloped Bridge Decks, Ramps & Side Railing Air-Walls!
+  // 2. Build Exact Sloped Bridge Decks, Ramps & Side Railing Air-Walls (supporting arbitrary real-map headings!)
   function addBridgePhysics(b) {
     const thickness = 0.6;
     const rise = b.deckY - b.baseY;
@@ -85,68 +85,45 @@ export function createPhysicsWorld() {
     const halfSpan = b.spanLength / 2;
     const rampCenterAlong = halfSpan + b.rampLength / 2;
     const rampMidY = (b.baseY + b.deckY) / 2;
-    const railH = 3.4; // Tall invisible guardrail wall so player/car cannot jump off bridge
+    const railH = 3.4;
     const railThick = 0.55;
     const railOffset = b.width / 2 - 0.15;
 
-    if (b.axis === 'x') {
-      // Main flat bridge deck
-      addBoxCollider(b.cx, b.deckY - thickness / 2, b.cz, b.spanLength + 0.4, thickness, b.width, 0, false);
+    // Three/Cannon Y-rotation matching real XZ heading (angle = atan2(dz, dx) => yaw = -angle)
+    const yaw = -b.angle;
+    const cosA = Math.cos(b.angle);
+    const sinA = Math.sin(b.angle);
 
-      // West approach ramp (rising +X)
-      const westRamp = new CANNON.Body({
+    const toWorld = (localX, localZ) => [
+      b.cx + localX * cosA - localZ * sinA,
+      b.cz + localX * sinA + localZ * cosA
+    ];
+
+    // Main flat bridge deck
+    addBoxCollider(b.cx, b.deckY - thickness / 2, b.cz, b.spanLength + 0.4, thickness, b.width, yaw, false);
+
+    // Two sloped approach ramps (localX = -rampCenterAlong & +rampCenterAlong)
+    for (const dir of [-1, 1]) {
+      const [rx, rz] = toWorld(dir * rampCenterAlong, 0);
+      const rampBody = new CANNON.Body({
         mass: 0,
         material: groundMat,
         shape: new CANNON.Box(new CANNON.Vec3(rampHyp / 2 + 0.2, thickness / 2, b.width / 2))
       });
-      westRamp.position.set(b.cx - rampCenterAlong, rampMidY - thickness / 2, b.cz);
-      westRamp.quaternion.setFromEuler(0, 0, rampAngle);
-      world.addBody(westRamp);
+      rampBody.position.set(rx, rampMidY - thickness / 2, rz);
+      const qYaw = new CANNON.Quaternion();
+      qYaw.setFromAxisAngle(new CANNON.Vec3(0, 1, 0), yaw);
+      const qPitch = new CANNON.Quaternion();
+      qPitch.setFromAxisAngle(new CANNON.Vec3(0, 0, 1), dir === -1 ? rampAngle : -rampAngle);
+      qYaw.mult(qPitch, rampBody.quaternion);
+      world.addBody(rampBody);
+    }
 
-      // East approach ramp (descending +X)
-      const eastRamp = new CANNON.Body({
-        mass: 0,
-        material: groundMat,
-        shape: new CANNON.Box(new CANNON.Vec3(rampHyp / 2 + 0.2, thickness / 2, b.width / 2))
-      });
-      eastRamp.position.set(b.cx + rampCenterAlong, rampMidY - thickness / 2, b.cz);
-      eastRamp.quaternion.setFromEuler(0, 0, -rampAngle);
-      world.addBody(eastRamp);
-
-      // Continuous bridge side railing air-walls along full bridge + ramps
-      const totalLen = b.spanLength + b.rampLength * 2;
-      for (const side of [-1, 1]) {
-        addBoxCollider(b.cx, b.deckY + railH / 2 - 1.2, b.cz + side * railOffset, totalLen, railH + 2.4, railThick, 0, true);
-      }
-    } else {
-      // North-South bridge (axis === 'z')
-      addBoxCollider(b.cx, b.deckY - thickness / 2, b.cz, b.width, thickness, b.spanLength + 0.4, 0, false);
-
-      // North approach ramp (rising +Z)
-      const northRamp = new CANNON.Body({
-        mass: 0,
-        material: groundMat,
-        shape: new CANNON.Box(new CANNON.Vec3(b.width / 2, thickness / 2, rampHyp / 2 + 0.2))
-      });
-      northRamp.position.set(b.cx, rampMidY - thickness / 2, b.cz - rampCenterAlong);
-      northRamp.quaternion.setFromEuler(-rampAngle, 0, 0);
-      world.addBody(northRamp);
-
-      // South approach ramp (descending +Z)
-      const southRamp = new CANNON.Body({
-        mass: 0,
-        material: groundMat,
-        shape: new CANNON.Box(new CANNON.Vec3(b.width / 2, thickness / 2, rampHyp / 2 + 0.2))
-      });
-      southRamp.position.set(b.cx, rampMidY - thickness / 2, b.cz + rampCenterAlong);
-      southRamp.quaternion.setFromEuler(rampAngle, 0, 0);
-      world.addBody(southRamp);
-
-      // Side railing air-walls along full bridge + ramps
-      const totalLen = b.spanLength + b.rampLength * 2;
-      for (const side of [-1, 1]) {
-        addBoxCollider(b.cx + side * railOffset, b.deckY + railH / 2 - 1.2, b.cz, railThick, railH + 2.4, totalLen, 0, true);
-      }
+    // Continuous bridge side railing air-walls along full bridge + ramps
+    const totalLen = b.spanLength + b.rampLength * 2;
+    for (const side of [-1, 1]) {
+      const [wx, wz] = toWorld(0, side * railOffset);
+      addBoxCollider(wx, b.deckY + railH / 2 - 1.2, wz, totalLen, railH + 2.4, railThick, yaw, true);
     }
   }
 

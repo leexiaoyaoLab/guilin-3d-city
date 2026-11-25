@@ -127,8 +127,8 @@ function createKarstPeakMesh(radiusX, radiusZ, height, seed, options = {}) {
 function createElephantTrunkHill(nightGlowMats) {
   const group = new THREE.Group();
   group.name = 'ElephantTrunkHill';
-  group.position.set(14, -0.4, 86);
-  group.rotation.y = 0.22; // Facing east-southeast into the Li River confluence
+  group.position.set(-24, -0.4, 84);
+  group.rotation.y = 0.25; // Facing east into the real curved Li River at x ≈ -8
 
   const mats = getMaterialsLibrary();
   const rockMat = new THREE.MeshStandardMaterial({
@@ -321,23 +321,23 @@ export function createKarstMountains(scene, physics = null) {
     new THREE.BoxGeometry(4.2, 2.1, 0.7),
     [rockBaseMat(0x9a968b), rockBaseMat(0x9a968b), rockBaseMat(0x9a968b), rockBaseMat(0x9a968b), elephantSteleMat, elephantSteleMat]
   );
-  elephantStele.position.set(4.5, 1.5, 90.5);
-  elephantStele.rotation.y = -0.42;
+  elephantStele.position.set(-34, 1.5, 88);
+  elephantStele.rotation.y = -0.35;
   elephantStele.castShadow = true;
   elephantStele.userData.landmarkId = 'elephant-hill';
   group.add(elephantStele);
 
   if (physics) {
-    physics.addCylinderCollider(10, 86, 12.5, 24);
-    physics.addCylinderCollider(18, 86.5, 8.0, 20);
+    physics.addCylinderCollider(-28, 84, 12.5, 24);
+    physics.addCylinderCollider(-20, 84.5, 8.0, 20);
   }
 
-  // 2. 独秀峰 (Solitary Beauty Peak) - Directly north of East-West Alley, inside Jingjiang Palace (0, -58)
+  // 2. 独秀峰 (Solitary Beauty Peak) - Exact OSM coords (3, -58) inside Jingjiang Palace
   const duxiuPeak = createKarstPeakMesh(11.5, 10.5, 34, 303, {
     domePow: 0.34,
     cliffThreshold: 0.44
   });
-  duxiuPeak.position.set(0, 0, -58);
+  duxiuPeak.position.set(3, 0, -58);
   duxiuPeak.userData.landmarkId = 'jingjiang-palace';
   group.add(duxiuPeak);
 
@@ -351,55 +351,55 @@ export function createKarstMountains(scene, physics = null) {
     new THREE.BoxGeometry(2.8, 7.6, 0.55),
     [rockBaseMat(0x8c8a82), rockBaseMat(0x8c8a82), rockBaseMat(0x8c8a82), rockBaseMat(0x8c8a82), cliffInscriptionMat, rockBaseMat(0x8c8a82)]
   );
-  cliffTablet.position.set(0, 14.5, -46.8);
+  cliffTablet.position.set(3, 14.5, -46.8);
   cliffTablet.userData.landmarkId = 'jingjiang-palace';
   group.add(cliffTablet);
 
-  if (physics) physics.addCylinderCollider(0, -58, 10.5, 34);
+  if (physics) physics.addCylinderCollider(3, -58, 10.5, 34);
 
   // Small summit pavilion on Solitary Beauty Peak (独秀亭)
   const duxiuPav = createSummitPavilion(nightGlowMats);
-  duxiuPav.position.set(0, 33.4, -58);
+  duxiuPav.position.set(3, 33.4, -58);
   duxiuPav.scale.setScalar(0.75);
   duxiuPav.traverse((c) => (c.userData.landmarkId = 'jingjiang-palace'));
   group.add(duxiuPav);
 
-  // 3. 伏波山 (Fubo Hill) - Real map: SAME latitude as Solitary Beauty Peak, on Li River west bank!
+  // 3. 伏波山 (Fubo Hill) - Exact OSM coords (36, -62) on Li River west bank
   const fubo = createKarstPeakMesh(12.5, 10.8, 30, 404, {
     domePow: 0.4,
     cliffThreshold: 0.48
   });
-  fubo.position.set(34, 0, -58);
+  fubo.position.set(36, 0, -62);
   fubo.userData.landmarkId = 'fubo-diecai';
   group.add(fubo);
-  if (physics) physics.addCylinderCollider(34, -58, 11.2, 30);
+  if (physics) physics.addCylinderCollider(36, -62, 11.2, 30);
 
   // 4. 叠彩山 (Diecai Hill) - North of Fubo Hill along Li River west bank
   const diecaiGroup = new THREE.Group();
   const dcMain = createKarstPeakMesh(15.5, 13.0, 39, 505, { domePow: 0.44, cliffThreshold: 0.5 });
-  dcMain.position.set(28, 0, -116);
+  dcMain.position.set(32, 0, -118);
   diecaiGroup.add(dcMain);
-  if (physics) physics.addCylinderCollider(28, -116, 13.8, 39);
+  if (physics) physics.addCylinderCollider(32, -118, 13.8, 39);
 
   const dcSub = createKarstPeakMesh(10.5, 9.5, 27, 506, { domePow: 0.46 });
-  dcSub.position.set(13, 0, -110);
+  dcSub.position.set(17, 0, -112);
   diecaiGroup.add(dcSub);
-  if (physics) physics.addCylinderCollider(13, -110, 9.6, 27);
+  if (physics) physics.addCylinderCollider(17, -112, 9.6, 27);
 
   const nayunPav = createSummitPavilion(nightGlowMats);
-  nayunPav.position.set(28, 38.2, -116);
+  nayunPav.position.set(32, 38.2, -118);
   diecaiGroup.add(nayunPav);
 
   diecaiGroup.traverse((c) => (c.userData.landmarkId = 'fubo-diecai'));
   group.add(diecaiGroup);
 
-  // 5. 七星公园峰群 (Seven Star Park Peaks on East Bank directly across Jiefang Bridge)
+  // 5. 七星公园峰群 (Seven Star Park Peaks on East Bank across Jiefang Bridge)
   const sevenStarCoords = [
-    [110, -12, 16, 13, 35, 601],
-    [132, 8, 19, 15, 42, 602],
-    [114, 30, 14, 12, 29, 603],
-    [138, 48, 17, 14, 38, 604],
-    [100, 52, 11, 10, 24, 605]
+    [95, -8, 16, 13, 35, 601],
+    [118, 12, 19, 15, 42, 602],
+    [102, 34, 14, 12, 29, 603],
+    [126, 52, 17, 14, 38, 604],
+    [88, 56, 11, 10, 24, 605]
   ];
   for (const [x, z, rx, rz, h, seed] of sevenStarCoords) {
     const pk = createKarstPeakMesh(rx, rz, h, seed, { domePow: 0.45 });

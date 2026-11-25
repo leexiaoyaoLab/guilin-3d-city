@@ -5,50 +5,51 @@ import {
   getPeachRiverCenterZ,
   getWaterDepth
 } from '../data/landmarksData.js';
+import { REAL_ROADS } from '../data/guilinRealMapData.js';
 
 /**
- * Iconic street-level spawn points for GTA-style First-Person Roaming in Guilin
+ * Iconic street-level spawn points aligned strictly to real Guilin map coordinates
  */
 export const ROAM_SPAWNS = [
   {
     id: 'binjiang',
     name: '滨江路 · 象鼻山',
-    pos: [-1, 0.55, 86],
+    pos: [-38, 0.55, 84],
     yaw: -Math.PI * 0.48,
     pitch: 0.06
   },
   {
     id: 'jiefang-bridge',
     name: '解放桥 · 跨漓江',
-    pos: [29, 3.95, 1.5],
-    yaw: -Math.PI * 0.5,
+    pos: [22, 3.65, -2.5],
+    yaw: -Math.PI * 0.5 - 0.31,
     pitch: 0.03
   },
   {
     id: 'shan-lake',
     name: '杉湖 · 日月双塔',
-    pos: [-10, 0.55, 64.5],
+    pos: [-21, 0.55, 47],
     yaw: 0,
     pitch: 0.09
   },
   {
     id: 'east-west-alley',
     name: '东西巷 · 逍遥楼',
-    pos: [3, 0.55, -1.5],
-    yaw: 0,
+    pos: [4, 0.55, -7.5],
+    yaw: 0.25,
     pitch: 0.06
   },
   {
     id: 'jingjiang-gate',
     name: '靖江王府 · 承运门',
-    pos: [0, 0.55, -28.5],
+    pos: [3, 0.55, -28.5],
     yaw: 0,
     pitch: 0.14
   },
   {
     id: 'ronghu-gate',
     name: '榕湖 · 古南门',
-    pos: [-64, 0.55, 2.5],
+    pos: [-68, 0.55, -2.5],
     yaw: Math.PI,
     pitch: 0.04
   }
@@ -199,12 +200,12 @@ function createMinimapRenderer(canvas) {
   const scale = 0.72; // pixels per world unit
 
   const landmarks = [
-    { x: 14, z: 86, color: '#ebb75a', label: '象' },
-    { x: -10, z: 46, color: '#ffca57', label: '塔' },
-    { x: 0, z: -56, color: '#e05a4f', label: '王' },
-    { x: 52, z: 0, color: '#63d7c0', label: '桥' },
-    { x: 23.5, z: -15.5, color: '#ff9f43', label: '楼' },
-    { x: -64, z: 11, color: '#8ad8ff', label: '门' }
+    { x: -24, z: 84, color: '#ebb75a', label: '象' },
+    { x: -21, z: 32, color: '#ffca57', label: '塔' },
+    { x: 3, z: -56, color: '#e05a4f', label: '王' },
+    { x: 30.8, z: 0.1, color: '#63d7c0', label: '桥' },
+    { x: 21.5, z: -13.5, color: '#ff9f43', label: '楼' },
+    { x: -68, z: 6, color: '#8ad8ff', label: '门' }
   ];
 
   function draw(px, pz, yaw) {
@@ -249,33 +250,30 @@ function createMinimapRenderer(canvas) {
     }
     ctx.stroke();
 
-    // 3. Draw Shan Lake & Rong Lake (Exact map-tile layout!)
+    // 3. Draw Real Shan Lake & Rong Lake
     ctx.fillStyle = '#258285';
     ctx.beginPath();
-    ctx.ellipse(toX(-10), toY(46), 23 * scale, 15 * scale, 0, 0, Math.PI * 2);
+    ctx.ellipse(toX(-21), toY(32), 17.5 * scale, 11.5 * scale, 0, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.beginPath();
-    ctx.ellipse(toX(-72), toY(30), 28 * scale, 17 * scale, 0, 0, Math.PI * 2);
+    ctx.ellipse(toX(-72), toY(19), 27 * scale, 13.5 * scale, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // 4. Draw Main Urban Roads
-    ctx.strokeStyle = 'rgba(218, 232, 228, 0.55)';
-    ctx.lineWidth = 3.2;
-    ctx.beginPath();
-    // Zhongshan Rd (x = -40)
-    ctx.moveTo(toX(-40), toY(-130));
-    ctx.lineTo(toX(-40), toY(128));
-    // Jiefang Rd + Bridge (z = 0)
-    ctx.moveTo(toX(-138), toY(0));
-    ctx.lineTo(toX(132), toY(0));
-    // Lakeside North Ave (z = 25)
-    ctx.moveTo(toX(-122), toY(25));
-    ctx.lineTo(toX(24), toY(25));
-    // South Ave (z = 67)
-    ctx.moveTo(toX(-126), toY(67));
-    ctx.lineTo(toX(14), toY(67));
-    ctx.stroke();
+    // 4. Draw ALL 214 Real Curved Vector Roads from guilinRealMapData.js (Authentic Baidu/GPS Radar!)
+    for (const rd of REAL_ROADS) {
+      const isMajor = rd.type === 'primary' || rd.type === 'secondary';
+      ctx.strokeStyle = isMajor ? 'rgba(232, 245, 240, 0.72)' : 'rgba(175, 205, 198, 0.35)';
+      ctx.lineWidth = isMajor ? 2.6 : 1.3;
+      ctx.beginPath();
+      for (let i = 0; i < rd.pts.length; i++) {
+        const rx = toX(rd.pts[i][0]);
+        const ry = toY(rd.pts[i][1]);
+        if (i === 0) ctx.moveTo(rx, ry);
+        else ctx.lineTo(rx, ry);
+      }
+      ctx.stroke();
+    }
 
     // 5. Landmark Blips
     for (const lm of landmarks) {
