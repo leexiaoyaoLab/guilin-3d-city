@@ -10,6 +10,8 @@ import { createSimulation } from './scene/simulation.js';
 import { createPhysicsWorld } from './scene/physicsWorld.js';
 import { createFirstPersonController, ROAM_SPAWNS } from './scene/firstPersonMode.js';
 import { createGuilinEnvironment } from './scene/materialsLibrary.js';
+import { createBaiduMap3DManager } from './bmap/baiduMap3D.js';
+import { BMAP_ROAM_SPAWNS } from './bmap/coordTransform.js';
 
 // =========================================================
 // 1. RENDERER, SCENE, CAMERA & CONTROLS
@@ -82,10 +84,14 @@ const firstPerson = createFirstPersonController(camera, renderer.domElement, sce
   }
 });
 
+const bmapContainer = document.getElementById('bmap-container');
+const baiduMap3D = createBaiduMap3DManager(bmapContainer);
+
 // =========================================================
 // 3. INTERACTIVE STATE
 // =========================================================
 const state = {
+  engineMode: 'bmap', // 'bmap' (Baidu Maps GL 3D Real Roads) | 'sandbox' (Standalone Three.js + cannon-es)
   timeOfDay: 10.5, // Start in bright scenic Guilin morning light
   autoTime: false,
   weather: 'clear', // clear | misty | rain
@@ -105,14 +111,18 @@ let camFlight = null;
 
 function flyToLandmark(landmark, showCard = true) {
   state.activeLandmarkId = landmark.id;
-  camFlight = {
-    startPos: camera.position.clone(),
-    endPos: new THREE.Vector3(...landmark.cameraPos),
-    startTarget: controls.target.clone(),
-    endTarget: new THREE.Vector3(...landmark.cameraTarget),
-    progress: 0,
-    duration: 1.45
-  };
+  if (state.engineMode === 'bmap') {
+    baiduMap3D.flyToLandmark(landmark.id);
+  } else {
+    camFlight = {
+      startPos: camera.position.clone(),
+      endPos: new THREE.Vector3(...landmark.cameraPos),
+      startTarget: controls.target.clone(),
+      endTarget: new THREE.Vector3(...landmark.cameraTarget),
+      progress: 0,
+      duration: 1.45
+    };
+  }
 
   // Highlight dock button
   document.querySelectorAll('.dock-btn').forEach((btn) => {
@@ -410,18 +420,69 @@ window.addEventListener('keydown', (e) => {
   }
 });
 
-// Immersive First-Person Roaming UI bindings
+// Immersive First-Person / Baidu 3D Street Roaming UI bindings
+function enterActiveRoam(spawnId = 'jiefang-bridge') {
+  if (state.engineMode === 'bmap') {
+    closeLandmarkCard();
+    hudElements.forEach((el) => el.classList.add('hidden'));
+    restoreHudBtn.classList.add('hidden');
+    roamHudEl.classList.remove('hidden');
+    baiduMap3D.enterRoam(spawnId);
+  } else {
+    firstPerson.enter(spawnId);
+  }
+}
+
+function exitActiveRoam() {
+  if (state.engineMode === 'bmap') {
+    baiduMap3D.exitRoam();
+    roamHudEl.classList.add('hidden');
+    hudElements.forEach((el) => el.classList.remove('hidden'));
+  } else {
+    firstPerson.exit();
+  }
+}
+
 document.getElementById('btn-enter-roam').addEventListener('click', () => {
-  firstPerson.enter('jiefang-bridge');
+  enterActiveRoam('jiefang-bridge');
 });
 document.getElementById('btn-exit-roam').addEventListener('click', () => {
-  firstPerson.exit();
+  exitActiveRoam();
 });
 document.getElementById('btn-roam-view').addEventListener('click', () => {
-  firstPerson.toggleViewMode();
+  if (state.engineMode === 'sandbox') firstPerson.toggleViewMode();
 });
 document.getElementById('btn-roam-drive').addEventListener('click', () => {
-  firstPerson.setDriveMode(!firstPerson.isDriveMode());
+  if (state.engineMode === 'bmap') baiduMap3D.toggleRoamDrive();
+  else firstPerson.setDriveMode(!firstPerson.isDriveMode());
+});
+
+// Engine mode switcher (🗺 百度实景 3D vs 🏔 独立全 3D 沙盒)
+const btnEngineBmap = document.getElementById('btn-engine-bmap');
+const btnEngineSandbox = document.getElementById('btn-engine-sandbox');
+
+async function switchEngineMode(mode) {
+  if (firstPerson.isActive() || baiduMap3D.isRoamActive()) {
+    exitActiveRoam();
+  }
+  state.engineMode = mode;
+  btnEngineBmap.classList.toggle('active', mode === 'bmap');
+  btnEngineSandbox.classList.toggle('active', mode === 'sandbox');
+  if (mode === 'bmap') {
+    await baiduMap3D.show();
+    baiduMap3D.setTimeAtmosphere(state.timeOfDay);
+  } else {
+    baiduMap3D.hide();
+  }
+}
+
+btnEngineBmap.addEventListener('click', () => switchEngineMode('bmap'));
+btnEngineSandbox.addEventListener('click', () => switchEngineMode('sandbox'));
+
+// Launch directly into Baidu Maps GL 3D Real Road Network mode!
+switchEngineMode('bmap').catch((err) => {
+  console.warn('Baidu Maps GL init fallback to sandbox:', err);
+  switchEngineMode('sandbox');
 });
 
 const roamTimeBtns = document.querySelectorAll('[data-roam-time]');
@@ -450,7 +511,12 @@ ROAM_SPAWNS.forEach((sp, i) => {
   btn.className = 'roam-tp-btn' + (sp.id === 'jiefang-bridge' ? ' active' : '');
   btn.textContent = `${i + 1}. ${sp.name}`;
   btn.addEventListener('click', () => {
-    firstPerson.teleportTo(sp);
+    if (state.engineMode === 'bmap') {
+      const bsp = BMAP_ROAM_SPAWNS[i];
+      if (bsp) baiduMap3D.teleportRoam(bsp);
+    } else {
+      firstPerson.teleportTo(sp);
+    }
     tpBarEl.querySelectorAll('.roam-tp-btn').forEach((b) => b.classList.remove('active'));
     btn.classList.add('active');
   });
@@ -530,6 +596,9 @@ function animate() {
   }
 
   // Update atmosphere, sky, sun/moon, water shader & night lights
+  if (state.engineMode === 'bmap') {
+    baiduMap3D.setTimeAtmosphere(state.timeOfDay);
+  }
   const nightFactor = atmosphere.update(
     state.timeOfDay,
     state.weather,

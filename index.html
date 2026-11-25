@@ -8,6 +8,7 @@
 </head>
 <body>
   <div id="canvas-container"></div>
+  <div id="bmap-container"></div>
 
   <!-- Top-Left Title & Telemetry HUD -->
   <header class="hud-header" id="hud-header">
@@ -15,7 +16,11 @@
       <div class="brand-seal">桂</div>
       <div class="brand-text">
         <h1>桂林 · 3D山水模拟城市</h1>
-        <p>GUILIN 3D CITY SIMULATION · 两江四湖 · 喀斯特峰林</p>
+        <p>GUILIN 3D CITY · 百度实景 3D 路网融合</p>
+      </div>
+      <div class="engine-switcher">
+        <button class="eng-btn active" id="btn-engine-bmap" title="百度地图 GL 真实 3D 底图 + 3D 地标叠加">🗺 百度实景</button>
+        <button class="eng-btn" id="btn-engine-sandbox" title="独立 Three.js + cannon-es 物理引擎全 3D 沙盒">🏔 独立沙盒</button>
       </div>
     </div>
 
