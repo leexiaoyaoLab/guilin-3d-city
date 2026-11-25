@@ -14,6 +14,7 @@ import { createBaiduMap3DManager } from './bmap/baiduMap3D.js';
 import { BMAP_ROAM_SPAWNS } from './bmap/coordTransform.js';
 import { createLandmarkEditor } from './scene/landmarkEditor.js';
 import { createGuilinStreetscape } from './scene/streetscape.js';
+import { createZoneManager, findZoneForLandmark } from './zones/zoneManager.js';
 
 // =========================================================
 // 1. RENDERER, SCENE, CAMERA & CONTROLS
@@ -95,6 +96,112 @@ const landmarkEditor = createLandmarkEditor(scene, camera, renderer, controls, [
   ...karstSystem.editableItems,
   ...landmarkSystem.editableItems
 ]);
+
+// =========================================================
+// 2B. REGIONAL ZONE INSTANCES (1:1 高精区域副本系统)
+// =========================================================
+const zoneDrawerEl = document.getElementById('zone-drawer');
+const zoneCardsEl = document.getElementById('zone-cards');
+const zoneActiveBarEl = document.getElementById('zone-active-bar');
+const zoneBarTitleEl = document.getElementById('zone-bar-title');
+const zoneBarSubEl = document.getElementById('zone-bar-sub');
+const zoneVpRowEl = document.getElementById('zone-vp-row');
+const btnToggleZones = document.getElementById('btn-toggle-zones');
+const btnCloseZones = document.getElementById('btn-close-zones');
+const btnDrawerReturnWorld = document.getElementById('btn-drawer-return-world');
+const btnExitZone = document.getElementById('btn-exit-zone');
+const btnZoneWalk = document.getElementById('btn-zone-walk');
+const btnCardEnterZone = document.getElementById('btn-card-enter-zone');
+
+const worldSceneGroups = [
+  terrainSystem.group,
+  karstSystem.group,
+  landmarkSystem.group,
+  urbanSystem.group,
+  streetscapeSystem.group,
+  simSystem.group
+];
+
+const zoneManager = createZoneManager({
+  scene,
+  camera,
+  controls,
+  worldGroups: worldSceneGroups,
+  onZoneChange: (activeZone, isWalk) => {
+    const inZone = activeZone !== null;
+    document.getElementById('landmark-dock').classList.toggle('hidden', inZone);
+    zoneActiveBarEl.classList.toggle('hidden', !inZone);
+    btnDrawerReturnWorld.classList.toggle('hidden', !inZone);
+    btnToggleZones.classList.toggle('active', inZone || !zoneDrawerEl.classList.contains('hidden'));
+
+    if (inZone) {
+      closeLandmarkCard();
+      setEditorOpen(false);
+      zoneBarTitleEl.textContent = activeZone.name;
+      zoneBarSubEl.textContent = isWalk
+        ? '第一视角漫游中：WASD 移动 · 按住鼠标左键环顾 · Shift 加速 · ESC 退出'
+        : activeZone.subtitle;
+      btnZoneWalk.classList.toggle('active', isWalk);
+      btnZoneWalk.textContent = isWalk ? '🎥 退出漫游 (ESC)' : '🚶 副本第一视角 (WASD)';
+
+      zoneVpRowEl.innerHTML = '';
+      for (const vp of activeZone.viewpoints) {
+        const vpBtn = document.createElement('button');
+        vpBtn.className = 'roam-tp-btn';
+        vpBtn.textContent = vp.name;
+        vpBtn.addEventListener('click', () => {
+          zoneManager.flyToViewpoint(vp);
+          zoneVpRowEl.querySelectorAll('.roam-tp-btn').forEach((b) => b.classList.remove('active'));
+          vpBtn.classList.add('active');
+        });
+        zoneVpRowEl.appendChild(vpBtn);
+      }
+    }
+
+    // Highlight active card in zone drawer
+    zoneCardsEl.querySelectorAll('.zone-card').forEach((c) => {
+      c.classList.toggle('active', inZone && c.dataset.zoneId === activeZone.id);
+    });
+  }
+});
+
+// Populate Regional Zone Cards in Drawer
+zoneManager.catalog.forEach((z) => {
+  const card = document.createElement('button');
+  card.className = 'zone-card';
+  card.dataset.zoneId = z.id;
+  card.innerHTML = `
+    <div class="zone-card-head">
+      <span class="zone-card-title">${z.name}</span>
+      <span class="zone-card-badge">${z.badge}</span>
+    </div>
+    <div class="zone-card-desc">${z.desc}</div>
+  `;
+  card.addEventListener('click', () => {
+    if (state.engineMode !== 'sandbox') switchEngineMode('sandbox');
+    if (firstPerson.isActive()) firstPerson.exit();
+    zoneManager.enterZone(z.id);
+    zoneDrawerEl.classList.add('hidden');
+  });
+  zoneCardsEl.appendChild(card);
+});
+
+function setZoneDrawerOpen(open) {
+  zoneDrawerEl.classList.toggle('hidden', !open);
+  btnToggleZones.classList.toggle('active', open || zoneManager.isActive());
+  if (open) setEditorOpen(false);
+}
+
+btnToggleZones.addEventListener('click', () => {
+  setZoneDrawerOpen(zoneDrawerEl.classList.contains('hidden'));
+});
+btnCloseZones.addEventListener('click', () => setZoneDrawerOpen(false));
+btnDrawerReturnWorld.addEventListener('click', () => {
+  zoneManager.exitZone();
+  setZoneDrawerOpen(false);
+});
+btnExitZone.addEventListener('click', () => zoneManager.exitZone());
+btnZoneWalk.addEventListener('click', () => zoneManager.setZoneWalk(!zoneManager.isWalkActive()));
 
 // =========================================================
 // 3. INTERACTIVE STATE
@@ -261,14 +368,31 @@ const cardEn = document.getElementById('card-en');
 const cardElev = document.getElementById('card-elev');
 const cardDesc = document.getElementById('card-desc');
 
+let currentCardZoneId = null;
 function openLandmarkCard(lm) {
   cardCat.textContent = lm.category;
   cardTitle.textContent = lm.name;
   cardEn.textContent = lm.enName;
   cardElev.textContent = lm.elevation;
   cardDesc.textContent = lm.description;
+
+  const matchedZone = findZoneForLandmark(lm.id);
+  currentCardZoneId = matchedZone ? matchedZone.id : null;
+  if (matchedZone) {
+    btnCardEnterZone.textContent = `✨ 进入「${matchedZone.name}」1:1 区域副本`;
+    btnCardEnterZone.classList.remove('hidden');
+  } else {
+    btnCardEnterZone.classList.add('hidden');
+  }
+
   cardEl.classList.remove('hidden');
 }
+
+btnCardEnterZone.addEventListener('click', () => {
+  if (!currentCardZoneId) return;
+  if (state.engineMode !== 'sandbox') switchEngineMode('sandbox');
+  zoneManager.enterZone(currentCardZoneId);
+});
 
 function closeLandmarkCard() {
   cardEl.classList.add('hidden');
@@ -419,10 +543,16 @@ window.addEventListener('keydown', (e) => {
   if (firstPerson.isActive()) return;
 
   if (e.key === 'e' || e.key === 'E') {
-    if (state.engineMode === 'sandbox' && !firstPerson.isActive()) {
+    if (state.engineMode === 'sandbox' && !firstPerson.isActive() && !zoneManager.isActive()) {
       const next = !landmarkEditor.isActive();
       landmarkEditor.setActive(next);
       document.getElementById('btn-toggle-editor').classList.toggle('active', next);
+    }
+    return;
+  }
+  if (e.key === 'z' || e.key === 'Z') {
+    if (!firstPerson.isActive()) {
+      setZoneDrawerOpen(zoneDrawerEl.classList.contains('hidden'));
     }
     return;
   }
@@ -508,6 +638,8 @@ btnCloseEditor.addEventListener('click', () => setEditorOpen(false));
 
 btnEngineBmap.addEventListener('click', () => {
   setEditorOpen(false);
+  if (zoneManager.isActive()) zoneManager.exitZone();
+  setZoneDrawerOpen(false);
   switchEngineMode('bmap');
 });
 btnEngineSandbox.addEventListener('click', () => switchEngineMode('sandbox'));
@@ -644,26 +776,43 @@ function animate() {
   terrainSystem.waterUniforms.uTime.value = elapsed;
   updateNightIllumination(nightFactor);
 
-  // Update living boats, traffic, egrets, rain & osmanthus petals
-  const simStats = simSystem.update(dt, elapsed, {
-    boatDensity: state.boatDensity,
-    trafficDensity: state.trafficDensity,
-    flowSpeed: 1.0,
-    weather: state.weather
-  });
+  // Update active regional zone instance (1:1 details, animations, night glow & walk mode)
+  if (zoneManager.isActive()) {
+    zoneManager.update(dt, elapsed, nightFactor);
+  } else {
+    // Update living boats, traffic, egrets, rain & osmanthus petals in main world
+    const simStats = simSystem.update(dt, elapsed, {
+      boatDensity: state.boatDensity,
+      trafficDensity: state.trafficDensity,
+      flowSpeed: 1.0,
+      weather: state.weather
+    });
 
-  // Update telemetry & FPS
-  fpsFrames++;
-  fpsTimer += dt;
-  if (fpsTimer >= 0.4) {
-    const fps = Math.round(fpsFrames / fpsTimer);
-    statFpsEl.textContent = `${fps} FPS`;
-    updateTelemetry(simStats.visibleBoats);
-    fpsFrames = 0;
-    fpsTimer = 0;
+    // Update telemetry & FPS
+    fpsFrames++;
+    fpsTimer += dt;
+    if (fpsTimer >= 0.4) {
+      const fps = Math.round(fpsFrames / fpsTimer);
+      statFpsEl.textContent = `${fps} FPS`;
+      updateTelemetry(simStats.visibleBoats);
+      fpsFrames = 0;
+      fpsTimer = 0;
+    }
   }
 
-  if (firstPerson.isActive()) {
+  if (zoneManager.isActive()) {
+    fpsFrames++;
+    fpsTimer += dt;
+    if (fpsTimer >= 0.4) {
+      statFpsEl.textContent = `${Math.round(fpsFrames / fpsTimer)} FPS`;
+      updateTelemetry();
+      fpsFrames = 0;
+      fpsTimer = 0;
+    }
+    if (!zoneManager.isWalkActive()) {
+      controls.update();
+    }
+  } else if (firstPerson.isActive()) {
     firstPerson.update(dt, nightFactor);
   } else {
     controls.update();
@@ -682,6 +831,7 @@ window.addEventListener('resize', () => {
 window.__GUILIN_SIM__ = {
   state,
   firstPerson,
+  zoneManager,
   flyToLandmarkById: (id) => {
     const lm = LANDMARKS.find((l) => l.id === id);
     if (lm) flyToLandmark(lm, true);

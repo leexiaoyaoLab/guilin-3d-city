@@ -21,6 +21,7 @@
       <div class="engine-switcher">
         <button class="eng-btn active" id="btn-engine-sandbox" title="自绘高精度 3D 桂林实景（套用真实百度/OSM路网坐标，比例协调）">🏔 3D 实景</button>
         <button class="eng-btn" id="btn-engine-bmap" title="切换百度地图 GL 真实矢量底图对照">🗺 百度对照</button>
+        <button class="eng-btn zone-btn" id="btn-toggle-zones" title="按区域进入 1:1 高精细节副本 (Z)">🏛 区域副本</button>
         <button class="eng-btn edit-btn" id="btn-toggle-editor" title="开启/关闭地标 3D 拖拽位置编辑器 (E)">✏️ 编辑地标</button>
       </div>
     </div>
@@ -179,6 +180,31 @@
     </div>
   </aside>
 
+  <!-- Regional Instance / Zone Expansion Drawer (区域副本目录) -->
+  <aside class="zone-drawer glass hidden" id="zone-drawer">
+    <div class="editor-header">
+      <span>🏛 桂林 1:1 高精区域副本</span>
+      <button class="icon-btn" id="btn-close-zones" title="关闭">×</button>
+    </div>
+    <p class="zone-drawer-tip">每个区域独立扩展为 1:1 精细街景副本，支持近距自由漫游与昼夜光影联动</p>
+    <div class="zone-cards" id="zone-cards"></div>
+    <button class="chip-btn zone-return-btn hidden" id="btn-drawer-return-world">🌍 返回桂林全城大世界</button>
+  </aside>
+
+  <!-- Active Regional Zone Navigation Bar (副本内视角与漫游栏) -->
+  <div class="zone-active-bar glass hidden" id="zone-active-bar">
+    <div class="zone-bar-top">
+      <button class="roam-pill danger" id="btn-exit-zone">← 返回桂林大世界</button>
+      <div class="zone-bar-title-wrap">
+        <span class="zone-bar-badge">区域副本 · 1:1 高精细节</span>
+        <strong id="zone-bar-title">东西巷 · 逍遥楼街区</strong>
+      </div>
+      <button class="roam-pill" id="btn-zone-walk">🚶 副本第一视角 (WASD)</button>
+    </div>
+    <div class="zone-bar-sub" id="zone-bar-sub"></div>
+    <div class="zone-vp-row" id="zone-vp-row"></div>
+  </div>
+
   <!-- Landmark Details Popup Card -->
   <div class="landmark-card glass hidden" id="landmark-card">
     <button class="close-card" id="btn-close-card" title="关闭">×</button>
@@ -190,6 +216,7 @@
       <span id="card-elev">山高 55m</span>
     </div>
     <p id="card-desc"></p>
+    <button class="zone-portal-btn hidden" id="btn-card-enter-zone">✨ 进入 1:1 高精区域副本</button>
   </div>
 
   <!-- Bottom Landmark Camera Tour Bar -->
