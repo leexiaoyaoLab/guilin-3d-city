@@ -1,5 +1,8 @@
 import * as THREE from 'three';
-import { getMaterialsLibrary } from './materialsLibrary.js';
+import {
+  createStoneInscriptionMaterial,
+  getMaterialsLibrary
+} from './materialsLibrary.js';
 
 function seededRandom(seed) {
   let s = seed % 2147483647;
@@ -296,14 +299,34 @@ function createSummitPavilion(nightGlowMats) {
   return g;
 }
 
+function rockBaseMat(hex) {
+  return new THREE.MeshStandardMaterial({ color: hex, roughness: 0.9 });
+}
+
 export function createKarstMountains(scene, physics = null) {
   const group = new THREE.Group();
   group.name = 'KarstMountains';
   const nightGlowMats = [];
 
-  // 1. 象鼻山 (Elephant Trunk Hill)
+  // 1. 象鼻山 (Elephant Trunk Hill) + Carved Waterfront Stone Stele (象鼻山)
   const elephantHill = createElephantTrunkHill(nightGlowMats);
   group.add(elephantHill);
+
+  const elephantSteleMat = createStoneInscriptionMaterial('象鼻山', {
+    vertical: false,
+    stoneHex: '#c4bfb2',
+    inkHex: '#a8221b'
+  });
+  const elephantStele = new THREE.Mesh(
+    new THREE.BoxGeometry(4.2, 2.1, 0.7),
+    [rockBaseMat(0x9a968b), rockBaseMat(0x9a968b), rockBaseMat(0x9a968b), rockBaseMat(0x9a968b), elephantSteleMat, elephantSteleMat]
+  );
+  elephantStele.position.set(17.5, 1.5, 81.5);
+  elephantStele.rotation.y = -0.45;
+  elephantStele.castShadow = true;
+  elephantStele.userData.landmarkId = 'elephant-hill';
+  group.add(elephantStele);
+
   if (physics) {
     physics.addCylinderCollider(23, 77, 12.5, 24);
     physics.addCylinderCollider(31, 77.5, 8.0, 20);
@@ -317,6 +340,21 @@ export function createKarstMountains(scene, physics = null) {
   duxiuPeak.position.set(-32, 0, -48);
   duxiuPeak.userData.landmarkId = 'jingjiang-palace';
   group.add(duxiuPeak);
+
+  // Famous Cliff Inscription on Solitary Beauty Peak: 桂林山水甲天下!
+  const cliffInscriptionMat = createStoneInscriptionMaterial('桂林山水甲天下', {
+    vertical: true,
+    stoneHex: '#b4afa2',
+    inkHex: '#a31e17'
+  });
+  const cliffTablet = new THREE.Mesh(
+    new THREE.BoxGeometry(2.8, 7.6, 0.4),
+    [rockBaseMat(0x8c8a82), rockBaseMat(0x8c8a82), rockBaseMat(0x8c8a82), rockBaseMat(0x8c8a82), cliffInscriptionMat, rockBaseMat(0x8c8a82)]
+  );
+  cliffTablet.position.set(-32, 13.5, -38.8);
+  cliffTablet.userData.landmarkId = 'jingjiang-palace';
+  group.add(cliffTablet);
+
   if (physics) physics.addCylinderCollider(-32, -48, 10.5, 34);
 
   // Small summit pavilion on Solitary Beauty Peak (独秀亭)

@@ -1,5 +1,120 @@
 import * as THREE from 'three';
-import { getMaterialsLibrary } from './materialsLibrary.js';
+import {
+  createChinesePlaqueMaterial,
+  getMaterialsLibrary
+} from './materialsLibrary.js';
+
+/**
+ * Helper: creates a framed 3D Chinese Calligraphy Plaque (匾额/门牌) with dark wooden backing
+ */
+function createPlaqueBoard(text, width, height, options = {}, nightMaterials = null) {
+  const g = new THREE.Group();
+  const faceMat = createChinesePlaqueMaterial(text, options);
+  const woodMat = new THREE.MeshStandardMaterial({ color: 0x382014, roughness: 0.7 });
+
+  if (nightMaterials) {
+    nightMaterials.push({ mat: faceMat, baseEmissive: 0.18, nightEmissive: 1.55 });
+  }
+
+  const board = new THREE.Mesh(
+    new THREE.BoxGeometry(width, height, 0.22),
+    [woodMat, woodMat, woodMat, woodMat, faceMat, faceMat]
+  );
+  board.castShadow = true;
+  g.add(board);
+  return g;
+}
+
+/**
+ * Helper: builds an ornate Traditional Chinese Paifang Archway (古街牌坊) with gilded plaque
+ */
+function createPaifangArchway(title, nightMaterials) {
+  const g = new THREE.Group();
+  const mats = getMaterialsLibrary();
+
+  const stoneMat = new THREE.MeshStandardMaterial({
+    color: 0xd8d1c2,
+    map: mats.granite.map,
+    bumpMap: mats.granite.bumpMap,
+    bumpScale: 0.18,
+    roughness: 0.72
+  });
+  const pillarMat = new THREE.MeshStandardMaterial({ color: 0x8f2620, roughness: 0.58 });
+  const roofMat = new THREE.MeshStandardMaterial({
+    map: mats.roofDark.map,
+    bumpMap: mats.roofDark.bumpMap,
+    bumpScale: 0.22,
+    roughness: 0.48,
+    metalness: 0.16
+  });
+  const beamMat = new THREE.MeshStandardMaterial({
+    map: mats.dougongFrieze,
+    roughness: 0.52
+  });
+  const lanternMat = new THREE.MeshStandardMaterial({
+    color: 0xffd07a,
+    emissive: 0xff6e1a,
+    emissiveIntensity: 0.15
+  });
+  nightMaterials.push({ mat: lanternMat, baseEmissive: 0.15, nightEmissive: 2.3 });
+
+  // 4 Crimson pillars with stone drum bases
+  const pillarXs = [-4.2, -2.1, 2.1, 4.2];
+  for (const px of pillarXs) {
+    const base = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.9, 0.75), stoneMat);
+    base.position.set(px, 0.45, 0);
+    g.add(base);
+
+    const h = Math.abs(px) < 3 ? 5.6 : 4.4;
+    const p = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.25, h, 10), pillarMat);
+    p.position.set(px, h / 2 + 0.4, 0);
+    p.castShadow = true;
+    g.add(p);
+  }
+
+  // Painted dougong crossbeams
+  const mainBeam = new THREE.Mesh(new THREE.BoxGeometry(8.8, 0.72, 0.56), beamMat);
+  mainBeam.position.set(0, 4.2, 0);
+  g.add(mainBeam);
+
+  const topBeam = new THREE.Mesh(new THREE.BoxGeometry(4.8, 0.65, 0.56), beamMat);
+  topBeam.position.set(0, 5.45, 0);
+  g.add(topBeam);
+
+  // Tiered tiled roofs
+  const centerRoof = new THREE.Mesh(new THREE.BoxGeometry(5.6, 0.42, 1.85), roofMat);
+  centerRoof.position.set(0, 6.05, 0);
+  centerRoof.castShadow = true;
+  g.add(centerRoof);
+
+  for (const sx of [-3.25, 3.25]) {
+    const sideRoof = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.35, 1.5), roofMat);
+    sideRoof.position.set(sx, 4.78, 0);
+    sideRoof.castShadow = true;
+    g.add(sideRoof);
+  }
+
+  // Iconic gilded calligraphy plaque right in the center!
+  const plaque = createPlaqueBoard(
+    title,
+    3.4,
+    1.15,
+    { bgHex: '#181110', borderHex: '#ebb84b', textHex: '#ffde73', glowHex: '#ffc247' },
+    nightMaterials
+  );
+  plaque.position.set(0, 5.05, 0.36);
+  g.add(plaque);
+
+  // Hanging red palace lanterns
+  for (const lx of [-2.1, 2.1]) {
+    const lantern = new THREE.Mesh(new THREE.SphereGeometry(0.32, 8, 8), lanternMat);
+    lantern.scale.set(1, 1.25, 1);
+    lantern.position.set(lx, 3.55, 0.42);
+    g.add(lantern);
+  }
+
+  return g;
+}
 
 /**
  * Builds an ornate multi-tiered octagonal Chinese Pagoda (Sun Pagoda / Moon Pagoda)
@@ -149,6 +264,15 @@ function createTwinPagodas(nightMaterials, pointLights) {
     nightMaterials
   });
   sunPagoda.position.set(-11, -0.2, 25);
+  const sunPlaque = createPlaqueBoard(
+    '日塔',
+    2.1,
+    0.95,
+    { bgHex: '#331d07', borderHex: '#f7cf68', textHex: '#ffe48a', glowHex: '#ffc84d' },
+    nightMaterials
+  );
+  sunPlaque.position.set(0, 4.15, 3.25);
+  sunPagoda.add(sunPlaque);
   group.add(sunPagoda);
 
   // 月塔 (Moon Pagoda - 7 tiers, luminous glazed silver-blue) at (-26, 27)
@@ -165,6 +289,15 @@ function createTwinPagodas(nightMaterials, pointLights) {
     nightMaterials
   });
   moonPagoda.position.set(-26, -0.2, 27);
+  const moonPlaque = createPlaqueBoard(
+    '月塔',
+    1.85,
+    0.85,
+    { bgHex: '#102536', borderHex: '#9be0ff', textHex: '#d8f4ff', glowHex: '#6bd4ff' },
+    nightMaterials
+  );
+  moonPlaque.position.set(0, 3.9, 2.75);
+  moonPagoda.add(moonPlaque);
   group.add(moonPagoda);
 
   // Subtle glowing underwater/surface glass link path between Sun & Moon Pagodas
@@ -274,22 +407,98 @@ function createJingjiangPalace(nightMaterials) {
   }
 
   // 承运门 (Chengyun Grand Gatehouse) at south entrance (z = +18)
-  const gateBase = new THREE.Mesh(new THREE.BoxGeometry(11.5, 3.8, 4.2), stoneMat);
+  const gateBase = new THREE.Mesh(new THREE.BoxGeometry(12.2, 3.8, 4.4), stoneMat);
   gateBase.position.set(0, 1.9, d / 2);
   gateBase.castShadow = true;
   group.add(gateBase);
 
-  const gateHall = new THREE.Mesh(new THREE.BoxGeometry(8.5, 2.8, 3.2), wallMat);
-  gateHall.position.set(0, 5.1, d / 2);
+  // Recessed imperial arched gateway passage
+  const archVoid = new THREE.Mesh(
+    new THREE.CylinderGeometry(1.55, 1.55, 4.65, 16),
+    new THREE.MeshStandardMaterial({ color: 0x1d1614, roughness: 0.95 })
+  );
+  archVoid.rotation.x = Math.PI / 2;
+  archVoid.position.set(0, 1.35, d / 2);
+  group.add(archVoid);
+
+  // Ornate stone arch trim ring
+  const archTrim = new THREE.Mesh(
+    new THREE.TorusGeometry(1.62, 0.16, 8, 18, Math.PI),
+    stoneMat
+  );
+  archTrim.position.set(0, 1.35, d / 2 + 2.22);
+  group.add(archTrim);
+
+  // Upper palace gatehouse hall + painted dougong frieze + crimson pillars
+  const gateHall = new THREE.Mesh(new THREE.BoxGeometry(9.2, 2.9, 3.4), wallMat);
+  gateHall.position.set(0, 5.25, d / 2);
   gateHall.castShadow = true;
   group.add(gateHall);
 
-  const gateRoof = new THREE.Mesh(new THREE.ConeGeometry(7.2, 2.5, 4), roofYellowMat);
+  const friezeMat = new THREE.MeshStandardMaterial({ map: mats.dougongFrieze, roughness: 0.5 });
+  const gateFrieze = new THREE.Mesh(new THREE.BoxGeometry(9.5, 0.58, 3.65), friezeMat);
+  gateFrieze.position.set(0, 6.48, d / 2);
+  group.add(gateFrieze);
+
+  const pillarMat = new THREE.MeshStandardMaterial({ color: 0x991e1a, roughness: 0.55 });
+  for (const px of [-4.2, -2.1, 2.1, 4.2]) {
+    const col = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.18, 2.75, 8), pillarMat);
+    col.position.set(px, 5.15, d / 2 + 1.85);
+    group.add(col);
+  }
+
+  const gateRoof = new THREE.Mesh(new THREE.ConeGeometry(7.6, 2.7, 4), roofYellowMat);
   gateRoof.rotation.y = Math.PI / 4;
-  gateRoof.scale.set(1.2, 1, 0.65);
-  gateRoof.position.set(0, 7.6, d / 2);
+  gateRoof.scale.set(1.22, 1, 0.68);
+  gateRoof.position.set(0, 8.05, d / 2);
   gateRoof.castShadow = true;
   group.add(gateRoof);
+
+  // Iconic Imperial Plaques on Jingjiang Princes' City:
+  // 1) Grand upper plaque: 靖江王府 (gold calligraphy on royal blue-black lacquer)
+  const palacePlaque = createPlaqueBoard(
+    '靖江王府',
+    4.6,
+    1.45,
+    { bgHex: '#132436', borderHex: '#f5c756', textHex: '#ffe078', glowHex: '#ffc645' },
+    nightMaterials
+  );
+  palacePlaque.position.set(0, 6.05, d / 2 + 2.02);
+  group.add(palacePlaque);
+
+  // 2) Archway stone-framed plaque right above the gate tunnel: 承運門
+  const chengyunPlaque = createPlaqueBoard(
+    '承運門',
+    3.0,
+    1.0,
+    { bgHex: '#4a1512', borderHex: '#e6b84c', textHex: '#ffd86b', glowHex: '#ffbe42' },
+    nightMaterials
+  );
+  chengyunPlaque.position.set(0, 3.45, d / 2 + 2.32);
+  group.add(chengyunPlaque);
+
+  // Pair of sculpted granite guardian lions (石狮) flanking Chengyun Gate
+  for (const sx of [-4.4, 4.4]) {
+    const lionPed = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.9, 1.3), stoneMat);
+    lionPed.position.set(sx, 0.45, d / 2 + 3.4);
+    lionPed.castShadow = true;
+    group.add(lionPed);
+
+    const lionBody = new THREE.Mesh(new THREE.DodecahedronGeometry(0.55, 1), stoneMat);
+    lionBody.position.set(sx, 1.25, d / 2 + 3.4);
+    lionBody.scale.set(0.85, 1.15, 1.1);
+    group.add(lionBody);
+  }
+
+  // Yellow glazed coping tiles along the top of the crimson palace walls
+  const northCap = new THREE.Mesh(new THREE.BoxGeometry(w + 0.4, 0.36, 1.5), roofYellowMat);
+  northCap.position.set(0, wallH + 0.18, -d / 2);
+  group.add(northCap);
+  for (const sx of [-w / 2, w / 2]) {
+    const sideCap = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.36, d + 0.4), roofYellowMat);
+    sideCap.position.set(sx, wallH + 0.18, 0);
+    group.add(sideCap);
+  }
 
   // Palace courtyard paving
   const court = new THREE.Mesh(new THREE.PlaneGeometry(w - 2, d - 2), stoneMat);
@@ -298,9 +507,18 @@ function createJingjiangPalace(nightMaterials) {
   court.receiveShadow = true;
   group.add(court);
 
-  // 承运殿 (Main Palace Hall) just south of Solitary Beauty Peak
-  const hall = buildTraditionalHall(13, 6.2, 4.0, wallMat, roofYellowMat, lanternMat);
+  // 承运殿 (Main Palace Hall) just south of Solitary Beauty Peak with plaque 承運殿
+  const hall = buildTraditionalHall(13, 6.2, 4.2, wallMat, roofYellowMat, lanternMat);
   hall.position.set(0, 0.2, 9.5);
+  const hallPlaque = createPlaqueBoard(
+    '承運殿',
+    3.6,
+    1.15,
+    { bgHex: '#1a1210', borderHex: '#f5c756', textHex: '#ffe078', glowHex: '#ffc645' },
+    nightMaterials
+  );
+  hallPlaque.position.set(0, 3.65, 3.28);
+  hall.add(hallPlaque);
   group.add(hall);
 
   // Side East & West Wing Pavilions
@@ -385,26 +603,98 @@ function createAncientSouthGate(nightMaterials) {
   });
   nightMaterials.push({ mat: lanternMat, baseEmissive: 0.1, nightEmissive: 2.1 });
 
-  // Stone city gate tower base
-  const base = new THREE.Mesh(new THREE.BoxGeometry(11.0, 3.6, 4.8), brickMat);
-  base.position.y = 1.8;
+  // Stone city gate tower base with ancient brick battlements (城垛)
+  const base = new THREE.Mesh(new THREE.BoxGeometry(12.2, 3.8, 5.2), brickMat);
+  base.position.y = 1.9;
   base.castShadow = true;
   base.receiveShadow = true;
   group.add(base);
 
-  // Dark arched passage visual
+  // Battlement crenellations along top rim of the Tang-dynasty stone wall
+  for (let bx = -5.4; bx <= 5.4; bx += 1.35) {
+    for (const bz of [-2.4, 2.4]) {
+      const merlon = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.65, 0.42), brickMat);
+      merlon.position.set(bx, 4.1, bz);
+      merlon.castShadow = true;
+      group.add(merlon);
+    }
+  }
+
+  // Dark arched passage visual + carved stone arch voussoir ring on both north & south faces
   const archHole = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.4, 1.4, 5.0, 12),
-    new THREE.MeshStandardMaterial({ color: 0x222326, roughness: 0.95 })
+    new THREE.CylinderGeometry(1.55, 1.55, 5.4, 16),
+    new THREE.MeshStandardMaterial({ color: 0x1b1c1f, roughness: 0.95 })
   );
   archHole.rotation.x = Math.PI / 2;
-  archHole.position.y = 1.15;
+  archHole.position.y = 1.25;
   group.add(archHole);
 
-  // Upper wooden pavilion (古南门城楼)
-  const pav = buildTraditionalHall(8.2, 3.4, 2.5, timberMat, roofMat, lanternMat);
-  pav.position.y = 3.6;
+  const stoneTrimMat = new THREE.MeshStandardMaterial({
+    color: 0xd0c9ba,
+    map: mats.granite.map,
+    bumpMap: mats.granite.bumpMap,
+    bumpScale: 0.16,
+    roughness: 0.78
+  });
+  for (const az of [-2.62, 2.62]) {
+    const archTrim = new THREE.Mesh(new THREE.TorusGeometry(1.62, 0.18, 8, 18, Math.PI), stoneTrimMat);
+    archTrim.position.set(0, 1.25, az);
+    group.add(archTrim);
+  }
+
+  // Upper wooden pavilion (古南门城楼) with crimson colonnade pillars & dougong frieze
+  const pav = buildTraditionalHall(8.6, 3.6, 2.7, timberMat, roofMat, lanternMat);
+  pav.position.y = 3.8;
   group.add(pav);
+
+  const friezeMat = new THREE.MeshStandardMaterial({ map: mats.dougongFrieze, roughness: 0.5 });
+  const pavFrieze = new THREE.Mesh(new THREE.BoxGeometry(8.9, 0.48, 3.85), friezeMat);
+  pavFrieze.position.y = 6.32;
+  group.add(pavFrieze);
+
+  const colMat = new THREE.MeshStandardMaterial({ color: 0x8e241f, roughness: 0.58 });
+  for (const cx of [-3.8, -1.9, 1.9, 3.8]) {
+    for (const cz of [-1.85, 1.85]) {
+      const col = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.16, 2.6, 8), colMat);
+      col.position.set(cx, 5.1, cz);
+      group.add(col);
+    }
+  }
+
+  // Iconic Plaques on BOTH South (Rong Lake) & North (Street) faces: 古南門 (Guo Moruo style gold calligraphy!)
+  for (const side of [1, -1]) {
+    // Upper tower plaque
+    const towerPlaque = createPlaqueBoard(
+      '古南門',
+      3.5,
+      1.25,
+      { bgHex: '#1b1411', borderHex: '#ebb84b', textHex: '#ffde73', glowHex: '#ffc447' },
+      nightMaterials
+    );
+    towerPlaque.position.set(0, 6.05, side * 2.02);
+    if (side === -1) towerPlaque.rotation.y = Math.PI;
+    group.add(towerPlaque);
+
+    // Stone arch plaque right above the tunnel
+    const archPlaque = createPlaqueBoard(
+      '古南門',
+      2.6,
+      0.92,
+      { bgHex: '#4f1914', borderHex: '#e6b84c', textHex: '#ffd86b', glowHex: '#ffbe42' },
+      nightMaterials
+    );
+    archPlaque.position.set(0, 3.35, side * 2.72);
+    if (side === -1) archPlaque.rotation.y = Math.PI;
+    group.add(archPlaque);
+
+    // Hanging red palace lanterns flanking the archway
+    for (const lx of [-2.4, 2.4]) {
+      const l = new THREE.Mesh(new THREE.SphereGeometry(0.32, 8, 8), lanternMat);
+      l.scale.set(1, 1.25, 1);
+      l.position.set(lx, 3.15, side * 2.78);
+      group.add(l);
+    }
+  }
 
   // Iconic 800-year-old Giant Banyan Tree (古榕树) beside Ancient South Gate!
   const banyan = new THREE.Group();
@@ -521,6 +811,15 @@ function createHistoricQuarter(nightMaterials) {
       group.add(l);
     }
   }
+
+  // Iconic Paifang Archways at East-West Alley (東西巷) & Zhengyang Pedestrian Street (正陽步行街)!
+  const eastWestArch = createPaifangArchway('東西巷', nightMaterials);
+  eastWestArch.position.set(-1.5, 0.4, -30.5);
+  group.add(eastWestArch);
+
+  const zhengyangArch = createPaifangArchway('正陽步行街', nightMaterials);
+  zhengyangArch.position.set(-1.5, 0.4, -20.0);
+  group.add(zhengyangArch);
 
   return group;
 }

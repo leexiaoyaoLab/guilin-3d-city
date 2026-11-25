@@ -606,6 +606,259 @@ export function createArchitecturalFacadeTextures(styleIndex) {
   };
 }
 
+/**
+ * 9. High-Resolution Traditional Chinese Calligraphy Plaque (牌匾 / 匾额)
+ * Renders crisp KaiTi/serif embossed calligraphy, double gilded frame, corner cloud ornaments,
+ * lacquer wood grain, bump relief, and warm/cool night emissive glow!
+ */
+export function createChinesePlaqueMaterial(text, options = {}) {
+  const {
+    bgHex = '#1a1210',
+    borderHex = '#e6b84c',
+    textHex = '#ffd86b',
+    glowHex = '#ffbe42',
+    vertical = false,
+    width = 512,
+    height = 256
+  } = options;
+
+  const w = vertical ? 256 : width;
+  const h = vertical ? 512 : height;
+
+  const diff = document.createElement('canvas');
+  diff.width = w;
+  diff.height = h;
+  const ctx = diff.getContext('2d');
+
+  const emis = document.createElement('canvas');
+  emis.width = w;
+  emis.height = h;
+  const eCtx = emis.getContext('2d');
+
+  const bump = document.createElement('canvas');
+  bump.width = w;
+  bump.height = h;
+  const bCtx = bump.getContext('2d');
+
+  // Lacquer background with subtle wood grain
+  ctx.fillStyle = bgHex;
+  ctx.fillRect(0, 0, w, h);
+  eCtx.fillStyle = '#000000';
+  eCtx.fillRect(0, 0, w, h);
+  bCtx.fillStyle = '#606060';
+  bCtx.fillRect(0, 0, w, h);
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+  ctx.lineWidth = 2;
+  for (let y = 8; y < h; y += 10) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(w, y);
+    ctx.stroke();
+  }
+
+  // Ornate double gilded frame
+  const drawFrame = (c, col, pad, lw) => {
+    c.strokeStyle = col;
+    c.lineWidth = lw;
+    c.strokeRect(pad, pad, w - pad * 2, h - pad * 2);
+  };
+  drawFrame(ctx, borderHex, 10, 8);
+  drawFrame(ctx, borderHex, 24, 3);
+  drawFrame(eCtx, glowHex, 12, 4);
+  drawFrame(bCtx, '#f0f0f0', 10, 8);
+  drawFrame(bCtx, '#d8d8d8', 24, 3);
+
+  // Decorative corner accents (回纹/云角)
+  const corners = [
+    [24, 24],
+    [w - 42, 24],
+    [24, h - 42],
+    [w - 42, h - 42]
+  ];
+  for (const [cx, cy] of corners) {
+    ctx.fillStyle = borderHex;
+    ctx.fillRect(cx, cy, 18, 18);
+    ctx.fillStyle = bgHex;
+    ctx.fillRect(cx + 4, cy + 4, 10, 10);
+  }
+
+  // Crisp traditional calligraphy text
+  const fontFamily = '"KaiTi", "STKaiti", "BiauKai", "FangSong", "Noto Serif SC", "SimSun", serif';
+  const chars = Array.from(text);
+
+  if (vertical) {
+    const fontSize = Math.min(110, Math.floor((h - 90) / chars.length));
+    const font = `bold ${fontSize}px ${fontFamily}`;
+    for (const [c, col] of [
+      [ctx, textHex],
+      [eCtx, glowHex],
+      [bCtx, '#ffffff']
+    ]) {
+      c.font = font;
+      c.fillStyle = col;
+      c.textAlign = 'center';
+      c.textBaseline = 'middle';
+      const stepY = (h - 90) / chars.length;
+      chars.forEach((ch, idx) => {
+        c.fillText(ch, w / 2, 48 + stepY * (idx + 0.5));
+      });
+    }
+  } else {
+    const fontSize = Math.min(132, Math.floor((w - 88) / Math.max(2, chars.length)));
+    const font = `bold ${fontSize}px ${fontFamily}`;
+    // Subtle dark drop shadow behind gold calligraphy
+    ctx.font = font;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = 'rgba(0,0,0,0.65)';
+    ctx.fillText(text, w / 2 + 4, h / 2 + 5);
+
+    for (const [c, col] of [
+      [ctx, textHex],
+      [eCtx, glowHex],
+      [bCtx, '#ffffff']
+    ]) {
+      c.font = font;
+      c.fillStyle = col;
+      c.textAlign = 'center';
+      c.textBaseline = 'middle';
+      c.fillText(text, w / 2, h / 2 + 2);
+    }
+  }
+
+  const map = toTexture(diff, { isColor: true });
+  const emissiveMap = toTexture(emis, { isColor: true });
+  const bumpMap = toTexture(bump, { isColor: false });
+
+  return new THREE.MeshStandardMaterial({
+    map,
+    emissive: new THREE.Color(0xffffff),
+    emissiveMap,
+    emissiveIntensity: 0.28,
+    bumpMap,
+    bumpScale: 0.14,
+    roughness: 0.36,
+    metalness: 0.42
+  });
+}
+
+/**
+ * 10. Carved Stone Cliff Inscription / Stele Texture (摩崖石刻 / 景石碑刻, e.g. 桂林山水甲天下, 象鼻山)
+ */
+export function createStoneInscriptionMaterial(text, options = {}) {
+  const { vertical = false, stoneHex = '#b8b3a6', inkHex = '#a8231c' } = options;
+  const w = vertical ? 256 : 512;
+  const h = vertical ? 640 : 256;
+
+  const diff = document.createElement('canvas');
+  diff.width = w;
+  diff.height = h;
+  const ctx = diff.getContext('2d');
+  const bump = document.createElement('canvas');
+  bump.width = w;
+  bump.height = h;
+  const bCtx = bump.getContext('2d');
+  const rand = seededRand(9099 + text.length * 17);
+
+  ctx.fillStyle = stoneHex;
+  ctx.fillRect(0, 0, w, h);
+  bCtx.fillStyle = '#c8c8c8';
+  bCtx.fillRect(0, 0, w, h);
+
+  // Natural limestone weathering speckle
+  for (let i = 0; i < 1600; i++) {
+    const x = rand() * w;
+    const y = rand() * h;
+    const s = 1 + rand() * 3;
+    const v = rand() > 0.5 ? 220 : 120;
+    ctx.fillStyle = `rgba(${v},${v},${v - 8},0.16)`;
+    ctx.fillRect(x, y, s, s);
+  }
+
+  const fontFamily = '"KaiTi", "STKaiti", "FangSong", "Noto Serif SC", serif';
+  const chars = Array.from(text);
+
+  if (vertical) {
+    const fontSize = Math.min(84, Math.floor((h - 64) / chars.length));
+    const stepY = (h - 64) / chars.length;
+    ctx.font = `bold ${fontSize}px ${fontFamily}`;
+    ctx.fillStyle = inkHex;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    bCtx.font = ctx.font;
+    bCtx.fillStyle = '#202020';
+    bCtx.textAlign = 'center';
+    bCtx.textBaseline = 'middle';
+    chars.forEach((ch, idx) => {
+      const cy = 36 + stepY * (idx + 0.5);
+      ctx.fillText(ch, w / 2, cy);
+      bCtx.fillText(ch, w / 2, cy);
+    });
+  } else {
+    const fontSize = Math.min(112, Math.floor((w - 56) / Math.max(2, chars.length)));
+    ctx.font = `bold ${fontSize}px ${fontFamily}`;
+    ctx.fillStyle = inkHex;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, w / 2, h / 2);
+
+    bCtx.font = ctx.font;
+    bCtx.fillStyle = '#202020';
+    bCtx.textAlign = 'center';
+    bCtx.textBaseline = 'middle';
+    bCtx.fillText(text, w / 2, h / 2);
+  }
+
+  return new THREE.MeshStandardMaterial({
+    map: toTexture(diff, { isColor: true }),
+    bumpMap: toTexture(bump, { isColor: false }),
+    bumpScale: 0.22,
+    roughness: 0.88,
+    metalness: 0.02
+  });
+}
+
+/**
+ * 11. Ornate Chinese Palace Dougong Painted Eave Frieze (斗拱青绿金彩画)
+ */
+function createDougongFriezeTexture() {
+  const size = 512;
+  const c = makeCanvas(size);
+  const ctx = c.getContext('2d');
+
+  // Deep imperial green-blue beam base
+  ctx.fillStyle = '#1d4d4f';
+  ctx.fillRect(0, 0, size, size);
+
+  // Horizontal gilded bands
+  ctx.fillStyle = '#d9a841';
+  ctx.fillRect(0, 0, size, 28);
+  ctx.fillRect(0, size - 28, size, 28);
+  ctx.fillStyle = '#275982';
+  ctx.fillRect(0, 48, size, size - 96);
+
+  // Repeating carved dougong bracket motifs
+  const count = 8;
+  const bw = size / count;
+  for (let i = 0; i < count; i++) {
+    const bx = i * bw;
+    ctx.fillStyle = '#9e2620';
+    ctx.fillRect(bx + 10, 68, bw - 20, size - 136);
+    ctx.strokeStyle = '#ebb84b';
+    ctx.lineWidth = 6;
+    ctx.strokeRect(bx + 14, 72, bw - 28, size - 144);
+
+    // Center gold lotus/cloud medallion
+    ctx.fillStyle = '#f2c861';
+    ctx.beginPath();
+    ctx.arc(bx + bw / 2, size / 2, 16, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  return toTexture(c, { repeatX: 3, repeatY: 1, isColor: true });
+}
+
 // Singleton cache for shared PBR texture sets
 let _cache = null;
 export function getMaterialsLibrary() {
@@ -615,14 +868,15 @@ export function getMaterialsLibrary() {
     terrainDetail: createTerrainDetailTextures(),
     asphalt: createAsphaltTextures(),
     granite: createGraniteStoneTextures('#d5cec0'),
-    darkStone: createGraniteStoneTextures('#8b8982'),
+    darkStone: createGraniteStoneTextures('#7d7c76'),
     roofGold: createChineseRoofTileTextures('#d8a436', '#f7cf68', '#8c6115'),
     roofSilver: createChineseRoofTileTextures('#6e95b5', '#b8dcf2', '#39556e'),
     roofDark: createChineseRoofTileTextures('#3c444a', '#59646c', '#1e2326'),
     pagodaGold: createPagodaWallTextures('#96681d', '#d8a642', '#ffcf66'),
     pagodaSilver: createPagodaWallTextures('#4a6982', '#87b8d8', '#7ce0ff'),
     palaceWall: createHistoricWallTextures(true),
-    lingnanWall: createHistoricWallTextures(false)
+    lingnanWall: createHistoricWallTextures(false),
+    dougongFrieze: createDougongFriezeTexture()
   };
   return _cache;
 }
