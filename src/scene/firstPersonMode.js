@@ -120,10 +120,12 @@ function createCruiserCockpit() {
   const cockpit = new THREE.Group();
   cockpit.visible = false;
 
-  const hoodMat = new THREE.MeshStandardMaterial({
-    color: 0x16242b,
-    metalness: 0.72,
-    roughness: 0.25
+  const hoodMat = new THREE.MeshPhysicalMaterial({
+    color: 0x0f3b42,
+    metalness: 0.65,
+    roughness: 0.18,
+    clearcoat: 1.0,
+    clearcoatRoughness: 0.08
   });
   const trimMat = new THREE.MeshStandardMaterial({
     color: 0x4ec4a7,
@@ -407,17 +409,20 @@ function createExteriorCruiserCar() {
   const car = new THREE.Group();
   car.visible = false;
 
-  const bodyMat = new THREE.MeshStandardMaterial({
-    color: 0x16323a,
-    metalness: 0.78,
-    roughness: 0.22
+  const bodyMat = new THREE.MeshPhysicalMaterial({
+    color: 0x11454d,
+    metalness: 0.68,
+    roughness: 0.18,
+    clearcoat: 1.0,
+    clearcoatRoughness: 0.08
   });
-  const glassMat = new THREE.MeshStandardMaterial({
-    color: 0x1a2c38,
-    metalness: 0.6,
-    roughness: 0.15,
+  const glassMat = new THREE.MeshPhysicalMaterial({
+    color: 0x122633,
+    metalness: 0.2,
+    roughness: 0.06,
+    clearcoat: 1.0,
     transparent: true,
-    opacity: 0.82
+    opacity: 0.84
   });
   const wheelMat = new THREE.MeshStandardMaterial({ color: 0x181a1e, roughness: 0.8 });
   const rimMat = new THREE.MeshStandardMaterial({ color: 0xcfd8dc, metalness: 0.8, roughness: 0.25 });

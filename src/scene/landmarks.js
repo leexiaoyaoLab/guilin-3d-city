@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { getMaterialsLibrary } from './materialsLibrary.js';
 
 /**
  * Builds an ornate multi-tiered octagonal Chinese Pagoda (Sun Pagoda / Moon Pagoda)
@@ -13,37 +14,54 @@ function buildOctagonalPagoda(options) {
     glowColor = 0xffb838,
     metalness = 0.65,
     roughness = 0.28,
+    isGold = true,
     nightMaterials
   } = options;
 
   const group = new THREE.Group();
+  const mats = getMaterialsLibrary();
+  const wallTex = isGold ? mats.pagodaGold : mats.pagodaSilver;
+  const roofTex = isGold ? mats.roofGold : mats.roofSilver;
 
-  const stoneMat = new THREE.MeshStandardMaterial({ color: 0xd9d4c7, roughness: 0.72 });
+  const stoneMat = new THREE.MeshStandardMaterial({
+    color: 0xe6dfd2,
+    map: mats.granite.map,
+    bumpMap: mats.granite.bumpMap,
+    bumpScale: 0.2,
+    roughness: 0.72
+  });
   const bodyMat = new THREE.MeshStandardMaterial({
-    color: bodyColor,
-    emissive: glowColor,
-    emissiveIntensity: 0.0,
-    metalness: metalness * 0.6,
-    roughness: roughness + 0.12
+    color: 0xffffff,
+    map: wallTex.map,
+    bumpMap: wallTex.bumpMap,
+    bumpScale: 0.16,
+    emissive: new THREE.Color(0xffffff),
+    emissiveMap: wallTex.emissiveMap,
+    emissiveIntensity: 0.12,
+    metalness: metalness * 0.55,
+    roughness: roughness + 0.08
   });
   const roofMat = new THREE.MeshStandardMaterial({
-    color: roofColor,
+    color: 0xffffff,
+    map: roofTex.map,
+    bumpMap: roofTex.bumpMap,
+    bumpScale: 0.24,
     emissive: glowColor,
     emissiveIntensity: 0.0,
-    metalness,
-    roughness
+    metalness: metalness * 0.85,
+    roughness: Math.max(0.18, roughness - 0.04)
   });
   const glowMat = new THREE.MeshStandardMaterial({
     color: glowColor,
     emissive: glowColor,
     emissiveIntensity: 0.25,
-    roughness: 0.25,
-    metalness: 0.35
+    roughness: 0.22,
+    metalness: 0.4
   });
   nightMaterials.push(
     { mat: glowMat, baseEmissive: 0.2, nightEmissive: 2.3 },
-    { mat: roofMat, baseEmissive: 0.0, nightEmissive: 0.58 },
-    { mat: bodyMat, baseEmissive: 0.0, nightEmissive: 0.38 }
+    { mat: roofMat, baseEmissive: 0.0, nightEmissive: 0.52 },
+    { mat: bodyMat, baseEmissive: 0.12, nightEmissive: 1.75 }
   );
 
   // Stone foundation terrace rising cleanly out of Shan Lake
@@ -127,6 +145,7 @@ function createTwinPagodas(nightMaterials, pointLights) {
     glowColor: 0xffc64d,
     metalness: 0.72,
     roughness: 0.24,
+    isGold: true,
     nightMaterials
   });
   sunPagoda.position.set(-11, -0.2, 25);
@@ -142,6 +161,7 @@ function createTwinPagodas(nightMaterials, pointLights) {
     glowColor: 0x7cd8ff,
     metalness: 0.45,
     roughness: 0.26,
+    isGold: false,
     nightMaterials
   });
   moonPagoda.position.set(-26, -0.2, 27);
@@ -188,10 +208,34 @@ function createJingjiangPalace(nightMaterials) {
   group.name = 'JingjiangPalace';
   group.position.set(-32, 0.4, -46);
 
-  const wallMat = new THREE.MeshStandardMaterial({ color: 0x99322c, roughness: 0.82 });
-  const stoneMat = new THREE.MeshStandardMaterial({ color: 0xc9c2b4, roughness: 0.78 });
-  const roofYellowMat = new THREE.MeshStandardMaterial({ color: 0xd4a238, roughness: 0.48, metalness: 0.18 });
-  const roofGreyMat = new THREE.MeshStandardMaterial({ color: 0x454d52, roughness: 0.72 });
+  const mats = getMaterialsLibrary();
+  const wallMat = new THREE.MeshStandardMaterial({
+    map: mats.palaceWall.map,
+    bumpMap: mats.palaceWall.bumpMap,
+    bumpScale: 0.16,
+    roughness: 0.78
+  });
+  const stoneMat = new THREE.MeshStandardMaterial({
+    color: 0xd8d1c2,
+    map: mats.granite.map,
+    bumpMap: mats.granite.bumpMap,
+    bumpScale: 0.18,
+    roughness: 0.75
+  });
+  const roofYellowMat = new THREE.MeshStandardMaterial({
+    map: mats.roofGold.map,
+    bumpMap: mats.roofGold.bumpMap,
+    bumpScale: 0.22,
+    roughness: 0.36,
+    metalness: 0.32
+  });
+  const roofGreyMat = new THREE.MeshStandardMaterial({
+    map: mats.roofDark.map,
+    bumpMap: mats.roofDark.bumpMap,
+    bumpScale: 0.2,
+    roughness: 0.56,
+    metalness: 0.12
+  });
   const lanternMat = new THREE.MeshStandardMaterial({
     color: 0xffd080,
     emissive: 0xff7a22,
@@ -313,9 +357,27 @@ function createAncientSouthGate(nightMaterials) {
   group.name = 'AncientSouthGate';
   group.position.set(-78, 0.3, 4.2);
 
-  const brickMat = new THREE.MeshStandardMaterial({ color: 0x807e78, roughness: 0.88 });
-  const timberMat = new THREE.MeshStandardMaterial({ color: 0x7a2b24, roughness: 0.72 });
-  const roofMat = new THREE.MeshStandardMaterial({ color: 0x3b4542, roughness: 0.65 });
+  const mats = getMaterialsLibrary();
+  const brickMat = new THREE.MeshStandardMaterial({
+    color: 0x9e9c94,
+    map: mats.darkStone.map,
+    bumpMap: mats.darkStone.bumpMap,
+    bumpScale: 0.22,
+    roughness: 0.84
+  });
+  const timberMat = new THREE.MeshStandardMaterial({
+    map: mats.palaceWall.map,
+    bumpMap: mats.palaceWall.bumpMap,
+    bumpScale: 0.14,
+    roughness: 0.7
+  });
+  const roofMat = new THREE.MeshStandardMaterial({
+    map: mats.roofDark.map,
+    bumpMap: mats.roofDark.bumpMap,
+    bumpScale: 0.2,
+    roughness: 0.55,
+    metalness: 0.12
+  });
   const lanternMat = new THREE.MeshStandardMaterial({
     color: 0xffd27a,
     emissive: 0xff8c24,
@@ -391,9 +453,28 @@ function createHistoricQuarter(nightMaterials) {
   const group = new THREE.Group();
   group.name = 'EastWestAlley';
 
-  const whiteWallMat = new THREE.MeshStandardMaterial({ color: 0xe6e0d2, roughness: 0.85 });
-  const greyWallMat = new THREE.MeshStandardMaterial({ color: 0xcfc9bc, roughness: 0.85 });
-  const tileRoofMat = new THREE.MeshStandardMaterial({ color: 0x3b4046, roughness: 0.75 });
+  const mats = getMaterialsLibrary();
+  const whiteWallMat = new THREE.MeshStandardMaterial({
+    color: 0xf4f0e6,
+    map: mats.lingnanWall.map,
+    bumpMap: mats.lingnanWall.bumpMap,
+    bumpScale: 0.15,
+    roughness: 0.8
+  });
+  const greyWallMat = new THREE.MeshStandardMaterial({
+    color: 0xdcd6c8,
+    map: mats.lingnanWall.map,
+    bumpMap: mats.lingnanWall.bumpMap,
+    bumpScale: 0.15,
+    roughness: 0.82
+  });
+  const tileRoofMat = new THREE.MeshStandardMaterial({
+    map: mats.roofDark.map,
+    bumpMap: mats.roofDark.bumpMap,
+    bumpScale: 0.22,
+    roughness: 0.54,
+    metalness: 0.12
+  });
   const lanternMat = new THREE.MeshStandardMaterial({
     color: 0xffc66e,
     emissive: 0xff6e1a,

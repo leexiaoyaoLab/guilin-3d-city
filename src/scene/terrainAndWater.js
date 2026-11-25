@@ -4,6 +4,7 @@ import {
   getWaterDepth,
   isOnRoad
 } from '../data/landmarksData.js';
+import { getMaterialsLibrary } from './materialsLibrary.js';
 
 // Subtle deterministic noise for natural terrain variation
 function hash2(x, z) {
@@ -109,9 +110,13 @@ export function createTerrainAndWater(scene) {
   geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
   geo.computeVertexNormals();
 
+  const mats = getMaterialsLibrary();
   const terrainMat = new THREE.MeshStandardMaterial({
     vertexColors: true,
-    roughness: 0.92,
+    map: mats.terrainDetail.map,
+    bumpMap: mats.terrainDetail.bumpMap,
+    bumpScale: 0.42,
+    roughness: 0.9,
     metalness: 0.02
   });
   const terrainMesh = new THREE.Mesh(geo, terrainMat);
@@ -357,9 +362,24 @@ function createJiefangBridge(b, bridgeLights) {
   g.position.set(b.cx, 0, b.cz);
   if (b.axis === 'z') g.rotation.y = Math.PI / 2;
 
+  const mats = getMaterialsLibrary();
   const length = b.spanLength;
-  const deckMat = new THREE.MeshStandardMaterial({ color: 0x52565c, roughness: 0.85 });
-  const stoneMat = new THREE.MeshStandardMaterial({ color: 0xd9d2c5, roughness: 0.65 });
+  const deckMat = new THREE.MeshStandardMaterial({
+    map: mats.asphalt.map,
+    bumpMap: mats.asphalt.bumpMap,
+    bumpScale: 0.12,
+    roughnessMap: mats.asphalt.roughnessMap,
+    roughness: 0.85,
+    metalness: 0.05
+  });
+  const stoneMat = new THREE.MeshStandardMaterial({
+    color: 0xe6dfd2,
+    map: mats.granite.map,
+    bumpMap: mats.granite.bumpMap,
+    bumpScale: 0.18,
+    roughness: 0.72,
+    metalness: 0.04
+  });
   const archGlowMat = new THREE.MeshStandardMaterial({
     color: 0xffd27d,
     emissive: 0xffa833,
@@ -446,10 +466,23 @@ function createStoneArchBridge(b, colorHex, bridgeLights) {
   g.position.set(b.cx, 0, b.cz);
   if (b.axis === 'z') g.rotation.y = Math.PI / 2;
 
+  const mats = getMaterialsLibrary();
   const length = b.spanLength;
   const width = b.width;
-  const stoneMat = new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.72 });
-  const roadMat = new THREE.MeshStandardMaterial({ color: 0x5c6066, roughness: 0.88 });
+  const stoneMat = new THREE.MeshStandardMaterial({
+    color: colorHex,
+    map: mats.granite.map,
+    bumpMap: mats.granite.bumpMap,
+    bumpScale: 0.18,
+    roughness: 0.74
+  });
+  const roadMat = new THREE.MeshStandardMaterial({
+    map: mats.asphalt.map,
+    bumpMap: mats.asphalt.bumpMap,
+    bumpScale: 0.12,
+    roughnessMap: mats.asphalt.roughnessMap,
+    roughness: 0.86
+  });
   const glowMat = new THREE.MeshStandardMaterial({
     color: 0xffe0a3,
     emissive: 0xffb347,

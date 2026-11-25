@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { getMaterialsLibrary } from './materialsLibrary.js';
 
 function seededRandom(seed) {
   let s = seed % 2147483647;
@@ -97,10 +98,14 @@ function createKarstPeakMesh(radiusX, radiusZ, height, seed, options = {}) {
   geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
   geo.computeVertexNormals();
 
+  const mats = getMaterialsLibrary();
   const mat = new THREE.MeshStandardMaterial({
     vertexColors: true,
-    roughness: 0.92,
-    metalness: 0.02,
+    map: mats.karstRock.map,
+    bumpMap: mats.karstRock.bumpMap,
+    bumpScale: 1.35,
+    roughness: 0.9,
+    metalness: 0.03,
     flatShading: false
   });
 
@@ -122,13 +127,20 @@ function createElephantTrunkHill(nightGlowMats) {
   group.position.set(27, -0.4, 77);
   group.rotation.y = 0.25; // Facing east-southeast into the Li River
 
+  const mats = getMaterialsLibrary();
   const rockMat = new THREE.MeshStandardMaterial({
-    color: 0x6f7a6c,
-    roughness: 0.92
+    color: 0x7c8678,
+    map: mats.karstRock.map,
+    bumpMap: mats.karstRock.bumpMap,
+    bumpScale: 1.1,
+    roughness: 0.9
   });
   const cliffMat = new THREE.MeshStandardMaterial({
-    color: 0x8e9186,
-    roughness: 0.88
+    color: 0x9fa196,
+    map: mats.karstRock.map,
+    bumpMap: mats.karstRock.bumpMap,
+    bumpScale: 1.25,
+    roughness: 0.86
   });
 
   // 1. Main Elephant Body (massive limestone karst ridge)
@@ -242,8 +254,15 @@ function createElephantTrunkHill(nightGlowMats) {
  */
 function createSummitPavilion(nightGlowMats) {
   const g = new THREE.Group();
-  const pillarMat = new THREE.MeshStandardMaterial({ color: 0x9e2b25, roughness: 0.65 });
-  const roofMat = new THREE.MeshStandardMaterial({ color: 0x3b4846, roughness: 0.6 });
+  const mats = getMaterialsLibrary();
+  const pillarMat = new THREE.MeshStandardMaterial({ color: 0x9e2b25, roughness: 0.62 });
+  const roofMat = new THREE.MeshStandardMaterial({
+    map: mats.roofDark.map,
+    bumpMap: mats.roofDark.bumpMap,
+    bumpScale: 0.2,
+    roughness: 0.52,
+    metalness: 0.14
+  });
   const lanternMat = new THREE.MeshStandardMaterial({
     color: 0xffd27a,
     emissive: 0xff9d2e,

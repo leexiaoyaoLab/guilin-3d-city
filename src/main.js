@@ -9,6 +9,7 @@ import { createAtmosphere } from './scene/atmosphere.js';
 import { createSimulation } from './scene/simulation.js';
 import { createPhysicsWorld } from './scene/physicsWorld.js';
 import { createFirstPersonController, ROAM_SPAWNS } from './scene/firstPersonMode.js';
+import { createGuilinEnvironment } from './scene/materialsLibrary.js';
 
 // =========================================================
 // 1. RENDERER, SCENE, CAMERA & CONTROLS
@@ -25,8 +26,12 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.08;
+renderer.toneMappingExposure = 1.12;
 container.appendChild(renderer.domElement);
+
+// Bake procedural Guilin sky environment map for realistic PBR reflections
+scene.environment = createGuilinEnvironment(renderer);
+scene.environmentIntensity = 0.72;
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;

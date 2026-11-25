@@ -6,6 +6,10 @@ import {
   isWaterOrShore,
   isOnRoad
 } from '../data/landmarksData.js';
+import {
+  createArchitecturalFacadeTextures,
+  getMaterialsLibrary
+} from './materialsLibrary.js';
 
 function seededRandom(seed) {
   let s = seed % 2147483647;
@@ -132,7 +136,15 @@ function createRoadNetwork(nightGlowMats) {
   const group = new THREE.Group();
   group.name = 'RoadNetwork';
 
-  const asphaltMat = new THREE.MeshStandardMaterial({ color: 0x454950, roughness: 0.9 });
+  const mats = getMaterialsLibrary();
+  const asphaltMat = new THREE.MeshStandardMaterial({
+    map: mats.asphalt.map,
+    bumpMap: mats.asphalt.bumpMap,
+    bumpScale: 0.14,
+    roughnessMap: mats.asphalt.roughnessMap,
+    roughness: 0.86,
+    metalness: 0.05
+  });
   const dashMat = new THREE.MeshStandardMaterial({ color: 0xe6dcc4, roughness: 0.7 });
   const poleMat = new THREE.MeshStandardMaterial({ color: 0x32363b, metalness: 0.5, roughness: 0.5 });
   const lampBulbMat = new THREE.MeshStandardMaterial({
@@ -272,23 +284,39 @@ export function createUrbanCity(scene, physics = null) {
   // 1. Road Network
   group.add(createRoadNetwork(nightGlowMats));
 
-  // 2. Procedural Modern Guilin Buildings (respecting Guilin's scenic height limits!)
+  // 2. Procedural Modern Guilin Buildings (512px PBR architectural glass & stone facades!)
+  const mats = getMaterialsLibrary();
   const styleCount = 4;
   for (let s = 0; s < styleCount; s++) {
-    const { map, emissiveMap } = createBuildingTextures(s);
+    const { map, emissiveMap, bumpMap, roughnessMap } = createArchitecturalFacadeTextures(s);
     const mat = new THREE.MeshStandardMaterial({
       map,
+      bumpMap,
+      bumpScale: 0.16,
+      roughnessMap,
+      roughness: 0.85,
+      metalness: 0.24,
       emissive: new THREE.Color(0xffffff),
       emissiveMap,
-      emissiveIntensity: 0.05,
-      roughness: 0.72,
-      metalness: 0.08
+      emissiveIntensity: 0.05
     });
     buildingMaterials.push(mat);
   }
 
-  const roofCapMat = new THREE.MeshStandardMaterial({ color: 0x6b7075, roughness: 0.85 });
-  const slopedRoofMat = new THREE.MeshStandardMaterial({ color: 0x434d52, roughness: 0.78 });
+  const roofCapMat = new THREE.MeshStandardMaterial({
+    color: 0x82878c,
+    map: mats.granite.map,
+    bumpMap: mats.granite.bumpMap,
+    bumpScale: 0.12,
+    roughness: 0.82
+  });
+  const slopedRoofMat = new THREE.MeshStandardMaterial({
+    map: mats.roofDark.map,
+    bumpMap: mats.roofDark.bumpMap,
+    bumpScale: 0.22,
+    roughness: 0.54,
+    metalness: 0.14
+  });
   const rand = seededRandom(8848);
 
   const buildingsGroup = new THREE.Group();
