@@ -78,9 +78,9 @@ export const GUILIN_BD09_POINTS = {
   'twin-pagodas': {
     id: 'twin-pagodas',
     name: '日月双塔',
-    bd09: wgs84ToBd09(110.2923, 25.2762),
-    sunBd09: wgs84ToBd09(110.2928, 25.2761),
-    moonBd09: wgs84ToBd09(110.2917, 25.2762),
+    bd09: wgs84ToBd09(110.2923, 25.2738),
+    sunBd09: wgs84ToBd09(110.2927, 25.2737),
+    moonBd09: wgs84ToBd09(110.2917, 25.2738),
     zoom: 18.8,
     tilt: 66,
     heading: 10

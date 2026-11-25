@@ -343,52 +343,62 @@ export function createBaiduMap3DManager(containerEl) {
     // Mount MapVGL ThreeLayer for our custom high-res 3D Guilin Landmarks!
     if (mapvgl && mapvgl.View && mapvgl.ThreeLayer) {
       view = new mapvgl.View({ map });
-      threeLayer = new mapvgl.ThreeLayer();
+      threeLayer = new mapvgl.ThreeLayer({
+        enabledPointOffset: true,
+        notUpdateSize: true
+      });
       view.addLayer(threeLayer);
+
+      // Helper: convert BD-09 (lng, lat) to Baidu Mercator Point required by ThreeLayer.add()
+      const toMcPoint = (bd09) => {
+        const mc = map.lnglatToMercator(bd09[0], bd09[1]);
+        return new BMapGL.Point(mc[0], mc[1]);
+      };
 
       const THREE = mapvgl.THREE;
       if (THREE) {
         // Lights inside ThreeLayer scene
-        const amb = new THREE.AmbientLight(0xffffff, 0.85);
-        const dir = new THREE.DirectionalLight(0xfff5dc, 1.35);
+        const threeScene = threeLayer.getScene ? threeLayer.getScene() : threeLayer;
+        const amb = new THREE.AmbientLight(0xffffff, 0.95);
+        const dir = new THREE.DirectionalLight(0xfff5dc, 1.45);
         dir.position.set(200, -180, 320);
-        threeLayer.add(amb);
-        threeLayer.add(dir);
+        threeScene.add(amb);
+        threeScene.add(dir);
 
-        // Place iconic 3D Guilin Landmarks at their EXACT BD-09 coordinates on Baidu Maps!
+        // Place iconic 3D Guilin Landmarks at their EXACT BD-09 Mercator coordinates on Baidu Maps!
         const tp = GUILIN_BD09_POINTS['twin-pagodas'];
         threeLayer.add(
-          buildPagodaZUp(THREE, 9, 8.5, 6.2, 0xe8b94c, 0xc99335, 0xffc64d, '日塔'),
-          new BMapGL.Point(tp.sunBd09[0], tp.sunBd09[1])
+          buildPagodaZUp(THREE, 9, 10.5, 7.2, 0xe8b94c, 0xc99335, 0xffc64d, '日塔'),
+          toMcPoint(tp.sunBd09)
         );
         threeLayer.add(
-          buildPagodaZUp(THREE, 7, 7.2, 5.6, 0x7ba4c4, 0x9ab7cf, 0x7cd8ff, '月塔'),
-          new BMapGL.Point(tp.moonBd09[0], tp.moonBd09[1])
+          buildPagodaZUp(THREE, 7, 9.0, 6.4, 0x7ba4c4, 0x9ab7cf, 0x7cd8ff, '月塔'),
+          toMcPoint(tp.moonBd09)
         );
 
         const eh = GUILIN_BD09_POINTS['elephant-hill'];
-        threeLayer.add(buildElephantHillZUp(THREE), new BMapGL.Point(eh.bd09[0], eh.bd09[1]));
+        threeLayer.add(buildElephantHillZUp(THREE), toMcPoint(eh.bd09));
 
         const jp = GUILIN_BD09_POINTS['jingjiang-palace'];
-        threeLayer.add(buildKarstPeakZUp(THREE, 34, 30, 72, 0x35643c), new BMapGL.Point(jp.bd09[0], jp.bd09[1]));
-        threeLayer.add(buildGateLandmarkZUp(THREE, '靖江王府', 0x99322c, 0xdba538, 1.05), new BMapGL.Point(jp.gateBd09[0], jp.gateBd09[1]));
+        threeLayer.add(buildKarstPeakZUp(THREE, 38, 34, 82, 0x35643c), toMcPoint(jp.bd09));
+        threeLayer.add(buildGateLandmarkZUp(THREE, '靖江王府', 0x99322c, 0xdba538, 1.25), toMcPoint(jp.gateBd09));
 
         const gn = GUILIN_BD09_POINTS['ronghu-gate'];
-        threeLayer.add(buildGateLandmarkZUp(THREE, '古南門', 0x7f7d76, 0x3d464a, 0.9), new BMapGL.Point(gn.bd09[0], gn.bd09[1]));
+        threeLayer.add(buildGateLandmarkZUp(THREE, '古南門', 0x7f7d76, 0x3d464a, 1.05), toMcPoint(gn.bd09));
 
         const jb = GUILIN_BD09_POINTS['jiefang-bridge'];
-        threeLayer.add(buildXiaoyaoTowerZUp(THREE), new BMapGL.Point(jb.xiaoyaoBd09[0], jb.xiaoyaoBd09[1]));
-        threeLayer.add(buildGateLandmarkZUp(THREE, '東西巷', 0xe0dad0, 0x3d464a, 0.72), new BMapGL.Point(jb.eastWestBd09[0], jb.eastWestBd09[1]));
-        threeLayer.add(buildGateLandmarkZUp(THREE, '正陽步行街', 0xe0dad0, 0x3d464a, 0.72), new BMapGL.Point(jb.zhengyangBd09[0], jb.zhengyangBd09[1]));
+        threeLayer.add(buildXiaoyaoTowerZUp(THREE), toMcPoint(jb.xiaoyaoBd09));
+        threeLayer.add(buildGateLandmarkZUp(THREE, '東西巷', 0xe0dad0, 0x3d464a, 0.85), toMcPoint(jb.eastWestBd09));
+        threeLayer.add(buildGateLandmarkZUp(THREE, '正陽步行街', 0xe0dad0, 0x3d464a, 0.85), toMcPoint(jb.zhengyangBd09));
 
         const fb = GUILIN_BD09_POINTS['fubo-diecai'];
-        threeLayer.add(buildKarstPeakZUp(THREE, 36, 32, 68, 0x37693d), new BMapGL.Point(fb.bd09[0], fb.bd09[1]));
-        threeLayer.add(buildKarstPeakZUp(THREE, 46, 40, 86, 0x315f38), new BMapGL.Point(fb.diecaiBd09[0], fb.diecaiBd09[1]));
+        threeLayer.add(buildKarstPeakZUp(THREE, 42, 36, 78, 0x37693d), toMcPoint(fb.bd09));
+        threeLayer.add(buildKarstPeakZUp(THREE, 52, 44, 96, 0x315f38), toMcPoint(fb.diecaiBd09));
 
         // Roaming 3D vehicle/marker synced to camera in Street Roaming mode
         roamVehicleMesh = buildRoamVehicleZUp(THREE);
         roamVehicleMesh.visible = false;
-        threeLayer.add(roamVehicleMesh, new BMapGL.Point(roamLng, roamLat));
+        threeLayer.add(roamVehicleMesh, toMcPoint([roamLng, roamLat]));
 
         threeLayer.update();
       }
@@ -428,7 +438,8 @@ export function createBaiduMap3DManager(containerEl) {
 
           if (roamVehicleMesh && threeLayer && map.lnglatToMercator) {
             const mc = map.lnglatToMercator(roamLng, roamLat);
-            roamVehicleMesh.position.set(mc[0], mc[1], 0);
+            const off = threeLayer.getPointOffset ? threeLayer.getPointOffset() : [0, 0];
+            threeLayer.updatePoint(roamVehicleMesh, new window.BMapGL.Point(mc[0] - off[0], mc[1] - off[1]));
             roamVehicleMesh.rotation.z = -rad;
             threeLayer.update();
           }
@@ -477,11 +488,12 @@ export function createBaiduMap3DManager(containerEl) {
       map.setZoom(20.2);
       map.setTilt(75);
       map.setHeading(roamHeading, { noAnimation: true });
-      if (roamVehicleMesh && map.lnglatToMercator) {
+      if (roamVehicleMesh && map.lnglatToMercator && threeLayer) {
         const mc = map.lnglatToMercator(roamLng, roamLat);
-        roamVehicleMesh.position.set(mc[0], mc[1], 0);
+        const off = threeLayer.getPointOffset ? threeLayer.getPointOffset() : [0, 0];
+        threeLayer.updatePoint(roamVehicleMesh, new window.BMapGL.Point(mc[0] - off[0], mc[1] - off[1]));
         roamVehicleMesh.rotation.z = -(roamHeading * Math.PI) / 180;
-        if (threeLayer) threeLayer.update();
+        threeLayer.update();
       }
     }
     const titleEl = document.getElementById('roam-district-title');
