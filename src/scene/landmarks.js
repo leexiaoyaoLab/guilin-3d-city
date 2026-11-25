@@ -777,31 +777,28 @@ function createHistoricQuarter(nightMaterials) {
   nightMaterials.push({ mat: lanternMat, baseEmissive: 0.1, nightEmissive: 2.4 });
 
   // =========================================================================
-  // EXACT BAIDU MAPS / OSM TOPOLOGY around Jiefang East Rd (z = 0):
-  // - NORTH of Jiefang East Rd (z < 0):
-  //     * 东西巷 (East-West Alley): runs East-West directly between Jingjiang Palace south gate (z=-38) and Jiefang East Rd (z=0)!
-  //     * 逍遥楼 (Xiaoyao Pavilion): iconic 3-tier Tang riverside tower at EAST END of East-West Alley (x=23, z=-15), NW corner of Jiefang Bridge!
-  // - SOUTH of Jiefang East Rd (z > 0):
-  //     * 正阳步行街 (Zhengyang Pedestrian Street): runs North-South at x=-6 from Jiefang East Rd (z=+6) down to Shan Lake North Rd (z=+24)!
+  // STRICTLY ALIGNED TO REAL OSM / BAIDU MAPS ROAD POLYLINES:
+  // - 解放东路 runs diagonally: [-25.4,-17] -> [-4.5,-11.2] -> [5.3,-9.4] -> [20.3,-4.4]
+  // - 东西巷 sits strictly NORTH of 解放东路, inside the real alley blocks between 东华路 (z≈-30) & 解放东路!
+  // - 正阳步行街 flanks the real pedestrian polyline [-4.5,-11.2] -> [-7.8,+11.6] SOUTH of 解放东路!
+  // - 逍遥楼 sits at (22.5, -19.5), strictly NORTH of the Jiefang Bridge / Binjiang Rd link ramp!
   // =========================================================================
   const alleyPlots = [
-    // 东西巷 (NORTH of Jiefang East Rd, flanking the E-W alley at z = -17)
-    [-9, -23.5, 6.2, 4.6, 3.4],
-    [-1, -23.5, 6.4, 4.6, 3.6],
-    [7, -23.5, 6.2, 4.6, 3.5],
-    [14.5, -23.5, 5.8, 4.6, 3.8],
-    [-9, -11.5, 6.2, 4.4, 3.5],
-    [-1, -11.5, 6.4, 4.4, 3.7],
-    [7, -11.5, 6.2, 4.4, 3.4],
-    [14.5, -11.5, 5.8, 4.4, 3.6],
-    // 正阳步行街 (SOUTH of Jiefang East Rd, flanking the N-S pedestrian street at x = -6)
-    [-12.5, 9.5, 5.4, 4.8, 3.8],
-    [-12.5, 17.5, 5.6, 4.8, 3.6],
-    [0.5, 9.5, 5.4, 4.8, 4.0],
-    [0.5, 17.5, 5.6, 4.8, 3.5]
+    // 东西巷 North Block (between 东华路/西华里 z≈-31 and 仁寿巷 z≈-19.5), [x, z, w, d, h, rotY]
+    [-8.5, -26.8, 5.4, 4.0, 3.4, -0.15],
+    [4.6, -25.2, 5.8, 4.2, 3.6, -0.15],
+    [16.2, -24.5, 4.6, 3.8, 3.5, -0.15],
+    // 东西巷 Mid-South Block (strictly NORTH of 解放东路 curb, verified > +1.0 clearance!)
+    [-8.8, -20.2, 4.4, 3.2, 3.4, -0.24],
+    [5.2, -16.8, 4.4, 3.2, 3.5, -0.24],
+    // 正阳步行街 (flanking real polyline [-4.5,-11.2] -> [-7.8,11.6], SOUTH of 解放东路)
+    [-12.4, -3.5, 4.8, 4.4, 3.7, -0.14],
+    [-13.4, 3.6, 4.8, 4.4, 3.5, -0.14],
+    [0.6, -1.8, 4.8, 4.4, 3.9, -0.14],
+    [-0.4, 5.4, 4.8, 4.4, 3.5, -0.14]
   ];
 
-  alleyPlots.forEach(([x, z, w, d, h], idx) => {
+  alleyPlots.forEach(([x, z, w, d, h, rotY], idx) => {
     const hall = buildTraditionalHall(
       w,
       d,
@@ -811,37 +808,39 @@ function createHistoricQuarter(nightMaterials) {
       lanternMat
     );
     hall.position.set(x, 0.4, z);
+    hall.rotation.y = rotY;
     group.add(hall);
   });
 
-  // Hanging street lanterns along East-West Alley (E-W at z=-17.5) & Zhengyang St (N-S at x=-6)
-  const lanternGeo = new THREE.SphereGeometry(0.28, 7, 7);
-  for (let x = -11; x <= 17; x += 4.5) {
+  // Hanging street lanterns strictly along real pedestrian alleys (仁寿巷 & 正阳步行街)
+  const lanternGeo = new THREE.SphereGeometry(0.26, 7, 7);
+  const alleyLanternPts = [
+    [-9.5, -22.2], [-5.2, -20.6], [-0.5, -19.6], [4.5, -18.8], [9.2, -18.1],
+    [-5.4, -6.2], [-6.1, -1.2], [-6.8, 3.8], [-7.4, 8.6]
+  ];
+  for (const [lx, lz] of alleyLanternPts) {
     const l = new THREE.Mesh(lanternGeo, lanternMat);
-    l.position.set(x, 3.4, -17.5);
-    group.add(l);
-  }
-  for (let z = 7; z <= 21; z += 4.5) {
-    const l = new THREE.Mesh(lanternGeo, lanternMat);
-    l.position.set(-6, 3.4, z);
+    l.position.set(lx, 3.4, lz);
     group.add(l);
   }
 
-  // 1) Iconic Paifang Archway at East-West Alley entrance (東西巷, facing diagonal Jiefang East Rd at ~+17°!)
+  // 1) Iconic Paifang Archway at East-West Alley entrance (東西巷, spanning real 正阳路 north of 解放东路!)
   const eastWestArch = createPaifangArchway('東西巷', nightMaterials);
-  eastWestArch.position.set(2.5, 0.4, -12.5);
-  eastWestArch.rotation.y = -0.28;
+  eastWestArch.scale.setScalar(0.76);
+  eastWestArch.position.set(-3.5, 0.4, -17.2);
+  eastWestArch.rotation.y = -0.16;
   group.add(eastWestArch);
 
-  // 2) Iconic Paifang Archway at Zhengyang Pedestrian Street entrance (正陽步行街, right on real polyline [-4.5,-11.2]->[-7.8,11.6]!)
+  // 2) Iconic Paifang Archway at Zhengyang Pedestrian Street entrance (正陽步行街, spanning real 正阳步行街 south of 解放东路!)
   const zhengyangArch = createPaifangArchway('正陽步行街', nightMaterials);
-  zhengyangArch.position.set(-5.8, 0.4, -4.5);
-  zhengyangArch.rotation.y = -0.28;
+  zhengyangArch.scale.setScalar(0.76);
+  zhengyangArch.position.set(-5.6, 0.4, -4.8);
+  zhengyangArch.rotation.y = -0.16;
   group.add(zhengyangArch);
 
-  // 3) 逍遥楼 (Xiaoyao Pavilion) — Exact OSM position (21.5, -13.5) at East End of East-West Alley, NW corner of Jiefang Bridge!
+  // 3) 逍遥楼 (Xiaoyao Pavilion) — Strictly north of Jiefang Bridge ramp & west of Binjiang Rd!
   const xiaoyao = new THREE.Group();
-  xiaoyao.position.set(21.5, 0.4, -13.5);
+  xiaoyao.position.set(18.6, 0.4, -18.5);
   xiaoyao.rotation.y = -0.28;
   const xyStoneMat = new THREE.MeshStandardMaterial({
     color: 0xd8d1c2,
@@ -864,16 +863,16 @@ function createHistoricQuarter(nightMaterials) {
     metalness: 0.32
   });
 
-  const xyBase = new THREE.Mesh(new THREE.BoxGeometry(9.2, 2.2, 7.6), xyStoneMat);
-  xyBase.position.y = 1.1;
+  const xyBase = new THREE.Mesh(new THREE.BoxGeometry(7.6, 2.0, 6.2), xyStoneMat);
+  xyBase.position.y = 1.0;
   xyBase.castShadow = true;
   xiaoyao.add(xyBase);
 
   // 3 stacked Tang-style pavilion tiers
   const tierSpecs = [
-    { y: 2.2, w: 7.8, d: 6.2, h: 3.1 },
-    { y: 5.5, w: 6.4, d: 5.0, h: 2.7 },
-    { y: 8.4, w: 5.0, d: 3.8, h: 2.4 }
+    { y: 2.0, w: 6.6, d: 5.2, h: 2.9 },
+    { y: 5.1, w: 5.4, d: 4.2, h: 2.5 },
+    { y: 7.8, w: 4.2, d: 3.3, h: 2.2 }
   ];
   for (const ts of tierSpecs) {
     const tier = buildTraditionalHall(ts.w, ts.d, ts.h, xyWallMat, xyRoofMat, lanternMat);
@@ -909,32 +908,33 @@ export function createLandmarks(scene, physics = null) {
 
   // Register solid physics colliders matching exact Baidu Maps / OSM positions
   if (physics) {
-    // Jingjiang Palace enclosure walls & halls (0, -56)
-    physics.addBoxCollider(0, 2.5, -74, 38, 5, 1.4); // North wall
-    physics.addBoxCollider(-19, 2.5, -56, 1.4, 5, 36); // West wall
-    physics.addBoxCollider(19, 2.5, -56, 1.4, 5, 36); // East wall
-    physics.addBoxCollider(-12.5, 2.5, -38, 13, 5, 1.4); // South-west wall
-    physics.addBoxCollider(12.5, 2.5, -38, 13, 5, 1.4); // South-east wall
-    physics.addBoxCollider(0, 3.0, -38, 12.2, 6, 4.4); // Chengyun Gate
-    physics.addBoxCollider(0, 2.5, -46.5, 13, 5, 6.2); // Main hall
-    physics.addBoxCollider(-12.5, 2.0, -52, 4.2, 4, 11); // West wing
-    physics.addBoxCollider(12.5, 2.0, -52, 4.2, 4, 11); // East wing
+    // Jingjiang Palace enclosure walls & halls (3, -56)
+    physics.addBoxCollider(3, 2.5, -74, 38, 5, 1.4); // North wall
+    physics.addBoxCollider(-16, 2.5, -56, 1.4, 5, 36); // West wall
+    physics.addBoxCollider(22, 2.5, -56, 1.4, 5, 36); // East wall
+    physics.addBoxCollider(-9.5, 2.5, -38, 13, 5, 1.4); // South-west wall
+    physics.addBoxCollider(15.5, 2.5, -38, 13, 5, 1.4); // South-east wall
+    physics.addBoxCollider(3, 3.0, -38, 12.2, 6, 4.4); // Chengyun Gate
+    physics.addBoxCollider(3, 2.5, -46.5, 13, 5, 6.2); // Main hall
+    physics.addBoxCollider(-9.5, 2.0, -52, 4.2, 4, 11); // West wing
+    physics.addBoxCollider(15.5, 2.0, -52, 4.2, 4, 11); // East wing
 
-    // Ancient South Gate (-64, 11.2) & Banyan Tree
-    physics.addBoxCollider(-64, 2.5, 11.2, 12.2, 5, 5.2);
-    physics.addCylinderCollider(-55.4, 12.4, 2.0, 6);
+    // Ancient South Gate (-68, 6.2) & Banyan Tree
+    physics.addBoxCollider(-68, 2.5, 6.2, 12.2, 5, 5.2);
+    physics.addCylinderCollider(-59.4, 7.4, 2.0, 6);
 
-    // Xiaoyao Pavilion (23.5, -15.5)
-    physics.addBoxCollider(23.5, 6.0, -15.5, 9.2, 12, 7.6);
+    // Xiaoyao Pavilion (18.6, -18.5)
+    physics.addBoxCollider(18.6, 6.0, -18.5, 7.6, 12, 6.2, -0.28);
 
-    // East-West Alley (NORTH of Jiefang Rd) & Zhengyang Pedestrian Street (SOUTH of Jiefang Rd)
+    // East-West Alley & Zhengyang Pedestrian Street buildings (all verified clear of Jiefang East Rd & Binjiang Rd!)
     const alleyBoxes = [
-      [-9, -23.5, 6.2, 4.6], [-1, -23.5, 6.4, 4.6], [7, -23.5, 6.2, 4.6], [14.5, -23.5, 5.8, 4.6],
-      [-9, -11.5, 6.2, 4.4], [-1, -11.5, 6.4, 4.4], [7, -11.5, 6.2, 4.4], [14.5, -11.5, 5.8, 4.4],
-      [-12.5, 9.5, 5.4, 4.8], [-12.5, 17.5, 5.6, 4.8], [0.5, 9.5, 5.4, 4.8], [0.5, 17.5, 5.6, 4.8]
+      [-8.5, -26.8, 5.4, 4.0, -0.15], [4.6, -25.2, 5.8, 4.2, -0.15], [16.2, -24.5, 4.6, 3.8, -0.15],
+      [-8.8, -20.2, 4.4, 3.2, -0.24], [5.2, -16.8, 4.4, 3.2, -0.24],
+      [-12.4, -3.5, 4.8, 4.4, -0.14], [-13.4, 3.6, 4.8, 4.4, -0.14],
+      [0.6, -1.8, 4.8, 4.4, -0.14], [-0.4, 5.4, 4.8, 4.4, -0.14]
     ];
-    for (const [bx, bz, bw, bd] of alleyBoxes) {
-      physics.addBoxCollider(bx, 3.0, bz, bw, 6, bd);
+    for (const [bx, bz, bw, bd, rot] of alleyBoxes) {
+      physics.addBoxCollider(bx, 3.0, bz, bw, 6, bd, rot);
     }
   }
 

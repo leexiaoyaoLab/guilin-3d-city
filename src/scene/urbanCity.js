@@ -304,7 +304,8 @@ export function createUrbanCity(scene, physics = null) {
       const z = gz + (rand() - 0.5) * 4.2;
 
       if (isWaterOrShore(x, z, 6.2)) continue;
-      if (isOnRoad(x, z, 4.8)) continue;
+      if (getBridgeSurfaceY(x, z, 8.5) !== null) continue;
+      if (isOnRoad(x, z, 5.6)) continue;
       if (isProtectedZone(x, z)) continue;
 
       // Distance from urban center (-30, -10) shapes building height & density
