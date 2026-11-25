@@ -115,6 +115,11 @@ function createKarstPeakMesh(radiusX, radiusZ, height, seed, options = {}) {
   const mesh = new THREE.Mesh(geo, mat);
   mesh.castShadow = !options.noShadow;
   mesh.receiveShadow = true;
+  mesh.userData.summit = {
+    x: height * tiltX,
+    y: height,
+    z: height * tiltZ
+  };
   return mesh;
 }
 
@@ -217,7 +222,12 @@ function createElephantTrunkHill(nightGlowMats) {
 
   // 3. 普贤塔 (Puxian Pagoda) perched atop Elephant Trunk Hill
   const pagoda = new THREE.Group();
-  pagoda.position.set(-2.6, 21.6, 0.2);
+  const bodySummit = body.userData.summit;
+  pagoda.position.set(
+    body.position.x + bodySummit.x,
+    bodySummit.y - 1.0,
+    body.position.z + bodySummit.z
+  );
 
   const brickMat = new THREE.MeshStandardMaterial({ color: 0xa05a3e, roughness: 0.8 });
   const roofMat = new THREE.MeshStandardMaterial({ color: 0x454a4d, roughness: 0.7 });
@@ -333,13 +343,16 @@ export function createKarstMountains(scene, physics = null) {
   }
 
   // 2. 独秀峰 (Solitary Beauty Peak) - Exact OSM coords (3, -58) inside Jingjiang Palace
+  // Grouped with cliff inscription + summit pavilion so move/rotate/scale keep them unified!
+  const duxiuGroup = new THREE.Group();
+  duxiuGroup.name = 'SolitaryBeautyPeak';
+  duxiuGroup.position.set(3, 0, -58);
+
   const duxiuPeak = createKarstPeakMesh(11.5, 10.5, 34, 303, {
     domePow: 0.34,
     cliffThreshold: 0.44
   });
-  duxiuPeak.position.set(3, 0, -58);
-  duxiuPeak.userData.landmarkId = 'jingjiang-palace';
-  group.add(duxiuPeak);
+  duxiuGroup.add(duxiuPeak);
 
   // Famous Cliff Inscription on Solitary Beauty Peak: 桂林山水甲天下!
   const cliffInscriptionMat = createStoneInscriptionMaterial('桂林山水甲天下', {
@@ -351,18 +364,20 @@ export function createKarstMountains(scene, physics = null) {
     new THREE.BoxGeometry(2.8, 7.6, 0.55),
     [rockBaseMat(0x8c8a82), rockBaseMat(0x8c8a82), rockBaseMat(0x8c8a82), rockBaseMat(0x8c8a82), cliffInscriptionMat, rockBaseMat(0x8c8a82)]
   );
-  cliffTablet.position.set(3, 14.5, -46.8);
-  cliffTablet.userData.landmarkId = 'jingjiang-palace';
-  group.add(cliffTablet);
+  cliffTablet.position.set(0, 14.5, 11.2);
+  duxiuGroup.add(cliffTablet);
+
+  // Small summit pavilion on Solitary Beauty Peak (独秀亭) anchored to exact summit vertex
+  const duxiuPav = createSummitPavilion(nightGlowMats);
+  const duxiuSummit = duxiuPeak.userData.summit;
+  duxiuPav.position.set(duxiuSummit.x, duxiuSummit.y - 0.85, duxiuSummit.z);
+  duxiuPav.scale.setScalar(0.75);
+  duxiuGroup.add(duxiuPav);
+
+  duxiuGroup.traverse((c) => (c.userData.landmarkId = 'jingjiang-palace'));
+  group.add(duxiuGroup);
 
   if (physics) physics.addCylinderCollider(3, -58, 10.5, 34);
-
-  // Small summit pavilion on Solitary Beauty Peak (独秀亭)
-  const duxiuPav = createSummitPavilion(nightGlowMats);
-  duxiuPav.position.set(3, 33.4, -58);
-  duxiuPav.scale.setScalar(0.75);
-  duxiuPav.traverse((c) => (c.userData.landmarkId = 'jingjiang-palace'));
-  group.add(duxiuPav);
 
   // 3. 伏波山 (Fubo Hill) - Placed cleanly EAST of real Binjiang Rd (x=36.7) right on Li River west bank!
   const fubo = createKarstPeakMesh(11.5, 10.2, 30, 404, {
@@ -387,7 +402,8 @@ export function createKarstMountains(scene, physics = null) {
   if (physics) physics.addCylinderCollider(21, -112, 9.6, 27);
 
   const nayunPav = createSummitPavilion(nightGlowMats);
-  nayunPav.position.set(0, 38.2, 0);
+  const dcSummit = dcMain.userData.summit;
+  nayunPav.position.set(dcSummit.x, dcSummit.y - 0.9, dcSummit.z);
   diecaiGroup.add(nayunPav);
 
   diecaiGroup.traverse((c) => (c.userData.landmarkId = 'fubo-diecai'));
@@ -414,16 +430,19 @@ export function createKarstMountains(scene, physics = null) {
   group.add(chuanshan);
   if (physics) physics.addCylinderCollider(106, 96, 14.5, 38);
 
+  const tashanGroup = new THREE.Group();
+  tashanGroup.position.set(85, 0, 106);
   const tashan = createKarstPeakMesh(11, 10, 29, 702, { domePow: 0.38 });
-  tashan.position.set(85, 0, 106);
-  group.add(tashan);
+  tashanGroup.add(tashan);
   if (physics) physics.addCylinderCollider(85, 106, 10.0, 29);
 
-  // Summit Shoushan Pagoda on Tashan
+  // Summit Shoushan Pagoda on Tashan anchored to exact summit vertex
   const tashanPagoda = createSummitPavilion(nightGlowMats);
-  tashanPagoda.position.set(85, 28.5, 106);
+  const tashanSummit = tashan.userData.summit;
+  tashanPagoda.position.set(tashanSummit.x, tashanSummit.y - 0.85, tashanSummit.z);
   tashanPagoda.scale.setScalar(0.85);
-  group.add(tashanPagoda);
+  tashanGroup.add(tashanPagoda);
+  group.add(tashanGroup);
 
   // 7. 老人山 / 西山峰群 (West Hills)
   const westHills = [
@@ -481,7 +500,7 @@ export function createKarstMountains(scene, physics = null) {
       { id: 'fubo', name: '伏波山', object: fubo },
       { id: 'diecai', name: '叠彩山', object: diecaiGroup },
       { id: 'elephant-hill', name: '象鼻山', object: elephantHill },
-      { id: 'duxiu-peak', name: '独秀峰', object: duxiuPeak }
+      { id: 'duxiu-peak', name: '独秀峰', object: duxiuGroup }
     ]
   };
 }
