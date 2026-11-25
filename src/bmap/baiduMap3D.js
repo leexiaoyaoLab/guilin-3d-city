@@ -60,12 +60,8 @@ function createPlaqueMat(THREE, text, bgHex, borderHex, textHex) {
   ctx.fillText(text, 256, 130);
 
   const tex = new THREE.CanvasTexture(c);
-  return new THREE.MeshStandardMaterial({
-    map: tex,
-    emissive: new THREE.Color(textHex),
-    emissiveIntensity: 0.35,
-    roughness: 0.35
-  });
+  // Use MeshBasicMaterial for 100% WebGL shader compatibility with MapVGL's internal Three.js renderer
+  return new THREE.MeshBasicMaterial({ map: tex });
 }
 
 /**
@@ -378,28 +374,32 @@ export function createBaiduMap3DManager(containerEl) {
         // Place iconic 3D Guilin Landmarks at their EXACT BD-09 Mercator coordinates on Baidu Maps!
         const tp = GUILIN_BD09_POINTS['twin-pagodas'];
         threeLayer.add(
-          buildPagodaZUp(threeEngine, 9, 10.5, 7.2, 0xe8b94c, 0xc99335, 0xffc64d, '日塔'),
+          buildPagodaZUp(threeEngine, 9, 13.5, 9.2, 0xf2c249, 0xd49b35, 0xffc64d, '日塔'),
           toMcPoint(tp.sunBd09)
         );
         threeLayer.add(
-          buildPagodaZUp(threeEngine, 7, 9.0, 6.4, 0x7ba4c4, 0x9ab7cf, 0x7cd8ff, '月塔'),
+          buildPagodaZUp(threeEngine, 7, 11.5, 8.2, 0x8cc0e8, 0xa8cae0, 0x7cd8ff, '月塔'),
           toMcPoint(tp.moonBd09)
         );
 
         const eh = GUILIN_BD09_POINTS['elephant-hill'];
-        threeLayer.add(buildElephantHillZUp(threeEngine), toMcPoint(eh.bd09));
+        const ehMesh = buildElephantHillZUp(threeEngine);
+        ehMesh.scale.setScalar(1.35);
+        threeLayer.add(ehMesh, toMcPoint(eh.bd09));
 
         const jp = GUILIN_BD09_POINTS['jingjiang-palace'];
-        threeLayer.add(buildKarstPeakZUp(threeEngine, 38, 34, 82, 0x35643c), toMcPoint(jp.bd09));
-        threeLayer.add(buildGateLandmarkZUp(threeEngine, '靖江王府', 0x99322c, 0xdba538, 1.25), toMcPoint(jp.gateBd09));
+        threeLayer.add(buildKarstPeakZUp(threeEngine, 42, 38, 92, 0x35643c), toMcPoint(jp.bd09));
+        threeLayer.add(buildGateLandmarkZUp(threeEngine, '靖江王府', 0x99322c, 0xdba538, 1.55), toMcPoint(jp.gateBd09));
 
         const gn = GUILIN_BD09_POINTS['ronghu-gate'];
-        threeLayer.add(buildGateLandmarkZUp(threeEngine, '古南門', 0x7f7d76, 0x3d464a, 1.05), toMcPoint(gn.bd09));
+        threeLayer.add(buildGateLandmarkZUp(threeEngine, '古南門', 0x7f7d76, 0x3d464a, 1.45), toMcPoint(gn.bd09));
 
         const jb = GUILIN_BD09_POINTS['jiefang-bridge'];
-        threeLayer.add(buildXiaoyaoTowerZUp(threeEngine), toMcPoint(jb.xiaoyaoBd09));
-        threeLayer.add(buildGateLandmarkZUp(threeEngine, '東西巷', 0xe0dad0, 0x3d464a, 0.85), toMcPoint(jb.eastWestBd09));
-        threeLayer.add(buildGateLandmarkZUp(threeEngine, '正陽步行街', 0xe0dad0, 0x3d464a, 0.85), toMcPoint(jb.zhengyangBd09));
+        const xyMesh = buildXiaoyaoTowerZUp(threeEngine);
+        xyMesh.scale.setScalar(1.4);
+        threeLayer.add(xyMesh, toMcPoint(jb.xiaoyaoBd09));
+        threeLayer.add(buildGateLandmarkZUp(threeEngine, '東西巷', 0xe0dad0, 0x3d464a, 1.15), toMcPoint(jb.eastWestBd09));
+        threeLayer.add(buildGateLandmarkZUp(threeEngine, '正陽步行街', 0xe0dad0, 0x3d464a, 1.15), toMcPoint(jb.zhengyangBd09));
 
         const fb = GUILIN_BD09_POINTS['fubo-diecai'];
         threeLayer.add(buildKarstPeakZUp(threeEngine, 42, 36, 78, 0x37693d), toMcPoint(fb.bd09));
