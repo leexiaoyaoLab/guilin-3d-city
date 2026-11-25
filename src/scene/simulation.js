@@ -47,19 +47,19 @@ export function createSimulation(scene) {
   const liRouteDown = new THREE.CatmullRomCurve3(liNorthPts);
   const liRouteUp = new THREE.CatmullRomCurve3(liSouthPts);
 
-  // Route B: Shan Lake (杉湖) loop around Sun & Moon Twin Pagodas (-6, 36)
+  // Route B: Shan Lake (杉湖) loop around Sun & Moon Twin Pagodas (-10, 46)
   const shanLoopPts = [];
   for (let i = 0; i < 16; i++) {
     const a = (i / 16) * Math.PI * 2;
-    shanLoopPts.push(new THREE.Vector3(-6 + Math.cos(a) * 17.5, 0.05, 36 + Math.sin(a) * 11.2));
+    shanLoopPts.push(new THREE.Vector3(-10 + Math.cos(a) * 17.5, 0.05, 46 + Math.sin(a) * 10.5));
   }
   const shanRoute = new THREE.CatmullRomCurve3(shanLoopPts, true);
 
-  // Route C: Rong Lake (榕湖) loop around the Central Island (-64, 27)
+  // Route C: Rong Lake (榕湖) loop around the Central Island (-72, 30)
   const rongLoopPts = [];
   for (let i = 0; i < 16; i++) {
     const a = (i / 16) * Math.PI * 2;
-    rongLoopPts.push(new THREE.Vector3(-64 + Math.cos(a) * 20.5, 0.05, 27 + Math.sin(a) * 12.2));
+    rongLoopPts.push(new THREE.Vector3(-72 + Math.cos(a) * 20.0, 0.05, 30 + Math.sin(a) * 11.8));
   }
   const rongRoute = new THREE.CatmullRomCurve3(rongLoopPts, true);
 
@@ -184,44 +184,44 @@ export function createSimulation(scene) {
   // 2. ROAD VEHICLES & CITY BUSES (城市车流)
   // =========================================================
   const roadPaths = [
-    // Jiefang Rd Eastbound & Westbound (z = -14, crossing Jiefang Bridge!)
+    // Jiefang Rd Eastbound & Westbound (z = 0, crossing Jiefang Bridge!)
     new THREE.CatmullRomCurve3([
-      new THREE.Vector3(-135, 0.72, -12.2),
-      new THREE.Vector3(12, 0.72, -12.2),
-      new THREE.Vector3(48, 3.95, -12.2),
-      new THREE.Vector3(84, 0.72, -12.2),
-      new THREE.Vector3(128, 0.72, -12.2)
+      new THREE.Vector3(-135, 0.72, 1.8),
+      new THREE.Vector3(14, 0.72, 1.8),
+      new THREE.Vector3(52, 3.95, 1.8),
+      new THREE.Vector3(88, 0.72, 1.8),
+      new THREE.Vector3(128, 0.72, 1.8)
     ]),
     new THREE.CatmullRomCurve3([
-      new THREE.Vector3(128, 0.72, -15.8),
-      new THREE.Vector3(84, 0.72, -15.8),
-      new THREE.Vector3(48, 3.95, -15.8),
-      new THREE.Vector3(12, 0.72, -15.8),
-      new THREE.Vector3(-135, 0.72, -15.8)
+      new THREE.Vector3(128, 0.72, -1.8),
+      new THREE.Vector3(88, 0.72, -1.8),
+      new THREE.Vector3(52, 3.95, -1.8),
+      new THREE.Vector3(14, 0.72, -1.8),
+      new THREE.Vector3(-135, 0.72, -1.8)
     ]),
-    // Zhongshan Central Rd Southbound & Northbound (x = -32, crossing Yangqiao & Peach Bridges!)
+    // Zhongshan Central Rd Southbound & Northbound (x = -40, crossing Yangqiao & Peach Bridges!)
     new THREE.CatmullRomCurve3([
-      new THREE.Vector3(-30.2, 0.72, -125),
-      new THREE.Vector3(-30.2, 0.72, 18),
-      new THREE.Vector3(-30.2, 2.52, 32),
-      new THREE.Vector3(-30.2, 0.72, 46),
-      new THREE.Vector3(-30.2, 0.72, 118)
-    ]),
-    new THREE.CatmullRomCurve3([
-      new THREE.Vector3(-33.8, 0.72, 118),
-      new THREE.Vector3(-33.8, 0.72, 46),
-      new THREE.Vector3(-33.8, 2.52, 32),
-      new THREE.Vector3(-33.8, 0.72, 18),
-      new THREE.Vector3(-33.8, 0.72, -125)
-    ]),
-    // Lakeside North Boulevard (z = 14)
-    new THREE.CatmullRomCurve3([
-      new THREE.Vector3(-118, 0.72, 15.1),
-      new THREE.Vector3(20, 0.72, 15.1)
+      new THREE.Vector3(-38.2, 0.72, -125),
+      new THREE.Vector3(-38.2, 0.72, 24),
+      new THREE.Vector3(-38.2, 2.52, 38),
+      new THREE.Vector3(-38.2, 0.72, 52),
+      new THREE.Vector3(-38.2, 0.72, 118)
     ]),
     new THREE.CatmullRomCurve3([
-      new THREE.Vector3(20, 0.72, 12.9),
-      new THREE.Vector3(-118, 0.72, 12.9)
+      new THREE.Vector3(-41.8, 0.72, 118),
+      new THREE.Vector3(-41.8, 0.72, 52),
+      new THREE.Vector3(-41.8, 2.52, 38),
+      new THREE.Vector3(-41.8, 0.72, 24),
+      new THREE.Vector3(-41.8, 0.72, -125)
+    ]),
+    // Lakeside North Boulevard (z = 25)
+    new THREE.CatmullRomCurve3([
+      new THREE.Vector3(-118, 0.72, 26.1),
+      new THREE.Vector3(20, 0.72, 26.1)
+    ]),
+    new THREE.CatmullRomCurve3([
+      new THREE.Vector3(20, 0.72, 23.9),
+      new THREE.Vector3(-118, 0.72, 23.9)
     ])
   ];
 

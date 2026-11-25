@@ -13,42 +13,42 @@ export const ROAM_SPAWNS = [
   {
     id: 'binjiang',
     name: '滨江路 · 象鼻山',
-    pos: [2, 0.55, 76],
+    pos: [-1, 0.55, 86],
     yaw: -Math.PI * 0.48,
     pitch: 0.06
   },
   {
     id: 'jiefang-bridge',
     name: '解放桥 · 跨漓江',
-    pos: [26, 3.95, -12.5],
+    pos: [29, 3.95, 1.5],
     yaw: -Math.PI * 0.5,
     pitch: 0.03
   },
   {
     id: 'shan-lake',
     name: '杉湖 · 日月双塔',
-    pos: [-6, 0.55, 55.5],
+    pos: [-10, 0.55, 64.5],
     yaw: 0,
     pitch: 0.09
   },
   {
     id: 'east-west-alley',
-    name: '东西巷 · 古街灯火',
-    pos: [17.8, 0.55, -14],
-    yaw: Math.PI,
-    pitch: 0.04
+    name: '东西巷 · 逍遥楼',
+    pos: [3, 0.55, -1.5],
+    yaw: 0,
+    pitch: 0.06
   },
   {
     id: 'jingjiang-gate',
     name: '靖江王府 · 承运门',
-    pos: [0, 0.55, -15.5],
+    pos: [0, 0.55, -28.5],
     yaw: 0,
     pitch: 0.14
   },
   {
     id: 'ronghu-gate',
     name: '榕湖 · 古南门',
-    pos: [-54, 0.55, -0.5],
+    pos: [-64, 0.55, 2.5],
     yaw: Math.PI,
     pitch: 0.04
   }
@@ -76,38 +76,41 @@ export function getStreetGroundY(x, z) {
  * Returns the live Guilin District & Street name for the GTA-style street banner
  */
 export function getDistrictInfo(x, z) {
-  if (Math.hypot(x - 17, z - 76) < 30) {
+  if (Math.hypot(x - 14, z - 86) < 30) {
     return { title: '象鼻山景区', sub: '滨江路南段 · 漓江与桃花江汇流处' };
   }
-  if (Math.abs(z - (-14)) < 10 && x > 14 && x < 82) {
-    return { title: '解放桥', sub: '跨漓江主桥 · 西邻东西巷 · 东接七星公园' };
+  if (Math.abs(z - 0) < 9 && x > 18 && x < 86) {
+    return { title: '解放桥', sub: '解放东路跨漓江主桥 · 西北角为逍遥楼' };
   }
-  if (Math.hypot(x - (-6), z - 36) < 28) {
+  if (Math.hypot(x - 23.5, z - (-15.5)) < 12) {
+    return { title: '逍遥楼 · 东西巷东口', sub: '解放桥西北角 · 漓江西畔名楼' };
+  }
+  if (Math.hypot(x - (-10), z - 46) < 27) {
     return { title: '杉湖景区 · 日月双塔', sub: '阳桥以东 · 正阳步行街南端' };
   }
-  if (Math.hypot(x - (-60), z - 22) < 34) {
+  if (Math.hypot(x - (-68), z - 24) < 34) {
     return { title: '榕湖 · 古南门', sub: '阳桥以西 · 唐代古城遗址 · 千年古榕' };
   }
-  if (Math.hypot(x - 0, z - (-40)) < 28) {
-    return { title: '靖江王府 · 独秀峰', sub: '桂林市中心 · 明代藩王城 · 王城路' };
+  if (Math.hypot(x - 0, z - (-54)) < 28) {
+    return { title: '靖江王府 · 独秀峰', sub: '东西巷正北 · 明代藩王城 · 王城路' };
   }
-  if (x > 10 && x < 26 && z > -28 && z < 8) {
-    return { title: '东西巷历史文化街区', sub: '王城正阳门外 · 解放桥西畔' };
+  if (x > -15 && x < 22 && z > -28 && z < -4) {
+    return { title: '东西巷历史文化街区', sub: '解放东路北侧 · 王城正阳门外 · 东接逍遥楼' };
   }
-  if (x > -6 && x < 11 && z > -10 && z < 14) {
-    return { title: '正阳步行街', sub: '北接靖江王府 · 南连杉湖日月双塔' };
+  if (x > -16 && x < 6 && z > 4 && z < 24) {
+    return { title: '正阳步行街', sub: '解放东路南侧 · 北接东西巷 · 南连杉湖' };
   }
-  if (Math.hypot(x - 26, z - (-78)) < 22 || Math.hypot(x - 22, z - (-124)) < 28) {
+  if (Math.hypot(x - 34, z - (-58)) < 22 || Math.hypot(x - 28, z - (-116)) < 28) {
     return { title: '伏波山 · 叠彩山', sub: '漓江西岸北段 · 滨江奇峰' };
   }
-  if (x > 70) {
+  if (x > 74) {
     return { title: '七星区 · 漓江东岸', sub: '七星公园峰群 · 滨江生态新城' };
   }
-  if (Math.abs(x - (-32)) < 10) {
-    return { title: '中山中路', sub: '桂林城市南北中轴 · 经阳桥分榕杉二湖' };
+  if (Math.abs(x - (-40)) < 10) {
+    return { title: '中山中路', sub: '桂林南北中轴 · 经阳桥分榕杉二湖' };
   }
-  if (Math.abs(z - (-14)) < 10) {
-    return { title: '解放东路 / 解放西路', sub: '桂林城市东西主干道' };
+  if (Math.abs(z - 0) < 10) {
+    return { title: '解放东路 / 解放西路', sub: '桂林东西主干道 · 北临东西巷 · 南临正阳街' };
   }
   return { title: '桂林秀峰城区', sub: '桂林山水甲天下 · 城在景中' };
 }
@@ -196,11 +199,12 @@ function createMinimapRenderer(canvas) {
   const scale = 0.72; // pixels per world unit
 
   const landmarks = [
-    { x: 17, z: 76, color: '#ebb75a', label: '象' },
-    { x: -6, z: 36, color: '#ffca57', label: '塔' },
-    { x: 0, z: -43, color: '#e05a4f', label: '王' },
-    { x: 48, z: -14, color: '#63d7c0', label: '桥' },
-    { x: -54, z: 8, color: '#8ad8ff', label: '门' }
+    { x: 14, z: 86, color: '#ebb75a', label: '象' },
+    { x: -10, z: 46, color: '#ffca57', label: '塔' },
+    { x: 0, z: -56, color: '#e05a4f', label: '王' },
+    { x: 52, z: 0, color: '#63d7c0', label: '桥' },
+    { x: 23.5, z: -15.5, color: '#ff9f43', label: '楼' },
+    { x: -64, z: 11, color: '#8ad8ff', label: '门' }
   ];
 
   function draw(px, pz, yaw) {
@@ -245,32 +249,32 @@ function createMinimapRenderer(canvas) {
     }
     ctx.stroke();
 
-    // 3. Draw Shan Lake & Rong Lake (Real Baidu Maps layout!)
+    // 3. Draw Shan Lake & Rong Lake (Exact map-tile layout!)
     ctx.fillStyle = '#258285';
     ctx.beginPath();
-    ctx.ellipse(toX(-6), toY(36), 23 * scale, 16 * scale, 0, 0, Math.PI * 2);
+    ctx.ellipse(toX(-10), toY(46), 23 * scale, 15 * scale, 0, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.beginPath();
-    ctx.ellipse(toX(-64), toY(27), 29 * scale, 18 * scale, 0, 0, Math.PI * 2);
+    ctx.ellipse(toX(-72), toY(30), 28 * scale, 17 * scale, 0, 0, Math.PI * 2);
     ctx.fill();
 
     // 4. Draw Main Urban Roads
     ctx.strokeStyle = 'rgba(218, 232, 228, 0.55)';
     ctx.lineWidth = 3.2;
     ctx.beginPath();
-    // Zhongshan Rd (x = -32)
-    ctx.moveTo(toX(-32), toY(-130));
-    ctx.lineTo(toX(-32), toY(128));
-    // Jiefang Rd + Bridge (z = -14)
-    ctx.moveTo(toX(-138), toY(-14));
-    ctx.lineTo(toX(132), toY(-14));
-    // Lakeside North Ave (z = 14)
-    ctx.moveTo(toX(-122), toY(14));
-    ctx.lineTo(toX(24), toY(14));
-    // South Ave (z = 58)
-    ctx.moveTo(toX(-126), toY(58));
-    ctx.lineTo(toX(16), toY(58));
+    // Zhongshan Rd (x = -40)
+    ctx.moveTo(toX(-40), toY(-130));
+    ctx.lineTo(toX(-40), toY(128));
+    // Jiefang Rd + Bridge (z = 0)
+    ctx.moveTo(toX(-138), toY(0));
+    ctx.lineTo(toX(132), toY(0));
+    // Lakeside North Ave (z = 25)
+    ctx.moveTo(toX(-122), toY(25));
+    ctx.lineTo(toX(24), toY(25));
+    // South Ave (z = 67)
+    ctx.moveTo(toX(-126), toY(67));
+    ctx.lineTo(toX(14), toY(67));
     ctx.stroke();
 
     // 5. Landmark Blips
