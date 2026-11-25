@@ -64,6 +64,69 @@ let savedOrbitPos = new THREE.Vector3(-95, 92, 138);
 let savedOrbitTarget = new THREE.Vector3(-5, 8, 12);
 
 const roamHudEl = document.getElementById('roam-hud');
+const portalFadeEl = document.getElementById('portal-fade');
+const portalPromptEl = document.getElementById('portal-prompt');
+const portalPromptTextEl = document.getElementById('portal-prompt-text');
+const btnRoamExitZone = document.getElementById('btn-roam-exit-zone');
+let currentNearbyPortal = null;
+let isPortalTransitioning = false;
+
+function runPortalTransition(actionFn) {
+  if (isPortalTransitioning) return;
+  isPortalTransitioning = true;
+  if (portalFadeEl) portalFadeEl.classList.add('active');
+  setTimeout(() => {
+    actionFn();
+    setTimeout(() => {
+      if (portalFadeEl) portalFadeEl.classList.remove('active');
+      isPortalTransitioning = false;
+    }, 110);
+  }, 210);
+}
+
+function triggerNearbyPortal() {
+  if (!currentNearbyPortal) return;
+  const target = currentNearbyPortal;
+  if (target.type === 'enter') {
+    runPortalTransition(() => {
+      const zone = zoneManager.enterZone(target.meta.id, { preserveRoam: true });
+      if (zone) firstPerson.setZoneContext(zone);
+      syncRoamZoneButtons();
+    });
+  } else if (target.type === 'exit') {
+    runPortalTransition(() => {
+      const exitedMeta = zoneManager.exitZone({ preserveRoam: true });
+      const retPos = exitedMeta ? exitedMeta.worldPortalPos : [4.5, 0.55, -13.5];
+      const retYaw = exitedMeta ? exitedMeta.worldExitYaw : 0;
+      firstPerson.setZoneContext(null, retPos, retYaw);
+      syncRoamZoneButtons();
+    });
+  }
+}
+
+function syncRoamZoneButtons() {
+  const inZone = zoneManager.isActive();
+  if (btnRoamExitZone) btnRoamExitZone.classList.toggle('hidden', !inZone);
+  const driveBtn = document.getElementById('btn-roam-drive');
+  if (driveBtn) driveBtn.classList.toggle('hidden', inZone);
+}
+
+if (portalPromptEl) {
+  portalPromptEl.addEventListener('click', triggerNearbyPortal);
+}
+if (btnRoamExitZone) {
+  btnRoamExitZone.addEventListener('click', () => {
+    if (!zoneManager.isActive()) return;
+    runPortalTransition(() => {
+      const exitedMeta = zoneManager.exitZone({ preserveRoam: true });
+      const retPos = exitedMeta ? exitedMeta.worldPortalPos : [4.5, 0.55, -13.5];
+      const retYaw = exitedMeta ? exitedMeta.worldExitYaw : 0;
+      firstPerson.setZoneContext(null, retPos, retYaw);
+      syncRoamZoneButtons();
+    });
+  });
+}
+
 const firstPerson = createFirstPersonController(camera, renderer.domElement, scene, physicsWorld, {
   onEnter: () => {
     savedOrbitPos.copy(camera.position);
@@ -72,19 +135,37 @@ const firstPerson = createFirstPersonController(camera, renderer.domElement, sce
     controls.enabled = false;
     buildCursor.visible = false;
     closeLandmarkCard();
+    zoneDrawerEl.classList.add('hidden');
+    zoneActiveBarEl.classList.add('hidden');
     hudElements.forEach((el) => el.classList.add('hidden'));
     restoreHudBtn.classList.add('hidden');
     roamHudEl.classList.remove('hidden');
+    syncRoamZoneButtons();
     renderer.domElement.style.cursor = 'crosshair';
   },
   onExit: () => {
     roamHudEl.classList.add('hidden');
+    if (portalPromptEl) portalPromptEl.classList.add('hidden');
+    currentNearbyPortal = null;
     hudElements.forEach((el) => el.classList.remove('hidden'));
-    camera.position.copy(savedOrbitPos);
-    controls.target.copy(savedOrbitTarget);
+    if (zoneManager.isActive()) {
+      document.getElementById('landmark-dock').classList.add('hidden');
+      zoneActiveBarEl.classList.remove('hidden');
+      const z = zoneManager.getActiveZone();
+      controls.minDistance = 4;
+      controls.maxDistance = 135;
+      camera.position.set(...z.defaultCamera.pos);
+      controls.target.set(...z.defaultCamera.target);
+    } else {
+      camera.position.copy(savedOrbitPos);
+      controls.target.copy(savedOrbitTarget);
+    }
     controls.enabled = true;
     controls.update();
     renderer.domElement.style.cursor = state.buildMode === 'inspect' ? 'grab' : 'crosshair';
+  },
+  onInteract: () => {
+    triggerNearbyPortal();
   }
 });
 
@@ -127,10 +208,12 @@ const zoneManager = createZoneManager({
   camera,
   controls,
   worldGroups: worldSceneGroups,
-  onZoneChange: (activeZone, isWalk) => {
+  onZoneChange: (activeZone, preserveRoam) => {
     const inZone = activeZone !== null;
-    document.getElementById('landmark-dock').classList.toggle('hidden', inZone);
-    zoneActiveBarEl.classList.toggle('hidden', !inZone);
+    if (!preserveRoam) {
+      document.getElementById('landmark-dock').classList.toggle('hidden', inZone);
+      zoneActiveBarEl.classList.toggle('hidden', !inZone);
+    }
     btnDrawerReturnWorld.classList.toggle('hidden', !inZone);
     btnToggleZones.classList.toggle('active', inZone || !zoneDrawerEl.classList.contains('hidden'));
 
@@ -138,11 +221,8 @@ const zoneManager = createZoneManager({
       closeLandmarkCard();
       setEditorOpen(false);
       zoneBarTitleEl.textContent = activeZone.name;
-      zoneBarSubEl.textContent = isWalk
-        ? '第一视角漫游中：WASD 移动 · 按住鼠标左键环顾 · Shift 加速 · ESC 退出'
-        : activeZone.subtitle;
-      btnZoneWalk.classList.toggle('active', isWalk);
-      btnZoneWalk.textContent = isWalk ? '🎥 退出漫游 (ESC)' : '🚶 副本第一视角 (WASD)';
+      zoneBarSubEl.textContent = activeZone.subtitle;
+      btnZoneWalk.textContent = '🚶 副本沉浸漫游 (F)';
 
       zoneVpRowEl.innerHTML = '';
       for (const vp of activeZone.viewpoints) {
@@ -201,7 +281,10 @@ btnDrawerReturnWorld.addEventListener('click', () => {
   setZoneDrawerOpen(false);
 });
 btnExitZone.addEventListener('click', () => zoneManager.exitZone());
-btnZoneWalk.addEventListener('click', () => zoneManager.setZoneWalk(!zoneManager.isWalkActive()));
+btnZoneWalk.addEventListener('click', () => {
+  const z = zoneManager.getActiveZone();
+  if (z) firstPerson.enterInZone(z);
+});
 
 // =========================================================
 // 3. INTERACTIVE STATE
@@ -536,8 +619,13 @@ restoreHudBtn.addEventListener('click', () => toggleHud(true));
 // Keyboard shortcuts
 window.addEventListener('keydown', (e) => {
   if (e.key === 'f' || e.key === 'F') {
-    if (firstPerson.isActive()) firstPerson.exit();
-    else firstPerson.enter('jiefang-bridge');
+    if (firstPerson.isActive()) {
+      firstPerson.exit();
+    } else if (zoneManager.isActive()) {
+      firstPerson.enterInZone(zoneManager.getActiveZone());
+    } else {
+      firstPerson.enter('jiefang-bridge');
+    }
     return;
   }
   if (firstPerson.isActive()) return;
@@ -680,6 +768,11 @@ ROAM_SPAWNS.forEach((sp, i) => {
       const bsp = BMAP_ROAM_SPAWNS[i];
       if (bsp) baiduMap3D.teleportRoam(bsp);
     } else {
+      if (zoneManager.isActive()) {
+        zoneManager.exitZone({ preserveRoam: true });
+        firstPerson.setZoneContext(null);
+        syncRoamZoneButtons();
+      }
       firstPerson.teleportTo(sp);
     }
     tpBarEl.querySelectorAll('.roam-tp-btn').forEach((b) => b.classList.remove('active'));
@@ -776,10 +869,10 @@ function animate() {
   terrainSystem.waterUniforms.uTime.value = elapsed;
   updateNightIllumination(nightFactor);
 
-  // Update active regional zone instance (1:1 details, animations, night glow & walk mode)
-  if (zoneManager.isActive()) {
-    zoneManager.update(dt, elapsed, nightFactor);
-  } else {
+  // Always update zoneManager (animates 4 main-world portal beacons OR active 1:1 zone instance)
+  zoneManager.update(dt, elapsed, nightFactor);
+
+  if (!zoneManager.isActive()) {
     // Update living boats, traffic, egrets, rain & osmanthus petals in main world
     const simStats = simSystem.update(dt, elapsed, {
       boatDensity: state.boatDensity,
@@ -798,9 +891,7 @@ function animate() {
       fpsFrames = 0;
       fpsTimer = 0;
     }
-  }
-
-  if (zoneManager.isActive()) {
+  } else {
     fpsFrames++;
     fpsTimer += dt;
     if (fpsTimer >= 0.4) {
@@ -809,11 +900,26 @@ function animate() {
       fpsFrames = 0;
       fpsTimer = 0;
     }
-    if (!zoneManager.isWalkActive()) {
-      controls.update();
-    }
-  } else if (firstPerson.isActive()) {
+  }
+
+  if (firstPerson.isActive()) {
     firstPerson.update(dt, nightFactor);
+
+    // Check proximity to 3D Portal Beacons (Main World -> Zone OR Zone -> Main World)
+    const p = firstPerson.getPlayerPosition();
+    const nearby = zoneManager.getNearbyPortal(p.x, p.z);
+    currentNearbyPortal = nearby;
+    if (portalPromptEl) {
+      if (nearby) {
+        portalPromptTextEl.textContent =
+          nearby.type === 'enter'
+            ? `进入「${nearby.meta.name}」1:1 高精副本`
+            : `返回「桂林全城大世界」`;
+        portalPromptEl.classList.remove('hidden');
+      } else {
+        portalPromptEl.classList.add('hidden');
+      }
+    }
   } else {
     controls.update();
   }

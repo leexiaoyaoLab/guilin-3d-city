@@ -585,6 +585,43 @@ export function createFirstPersonController(camera, domElement, scene, physics =
   const btnViewToggle = document.getElementById('btn-roam-view');
 
   let lastDistrictKey = '';
+  let activeZoneCtx = null;
+
+  function getZoneGroundY() {
+    if (!activeZoneCtx) return 0.55;
+    return Math.max(0.12, (activeZoneCtx.roamSpawn.pos[1] || 1.8) - 1.7);
+  }
+
+  function setZoneContext(zone, worldReturnPos = null, worldReturnYaw = null) {
+    activeZoneCtx = zone || null;
+    lastDistrictKey = '';
+    velocity.set(0, 0, 0);
+    verticalVel = 0;
+    isGrounded = true;
+
+    if (activeZoneCtx) {
+      if (driveMode) setDriveMode(false);
+      const sp = activeZoneCtx.roamSpawn;
+      const gy = getZoneGroundY();
+      playerPos.set(sp.pos[0], gy, sp.pos[2]);
+      yaw = sp.yaw || 0;
+      avatarYaw = yaw;
+      pitch = 0.03;
+      if (hudDistrictTitle) hudDistrictTitle.textContent = activeZoneCtx.name;
+      if (hudDistrictSub) hudDistrictSub.textContent = '1:1 区域副本沉浸漫游 · 靠近传送阵按 E 返回大世界';
+    } else if (worldReturnPos) {
+      playerPos.set(worldReturnPos[0], worldReturnPos[1] ?? 0.55, worldReturnPos[2]);
+      const gy = getStreetGroundY(playerPos.x, playerPos.z);
+      if (gy !== null) playerPos.y = gy;
+      if (physics) physics.teleportPlayer(playerPos.x, playerPos.y, playerPos.z);
+      if (typeof worldReturnYaw === 'number') {
+        yaw = worldReturnYaw;
+        avatarYaw = yaw;
+      }
+      pitch = 0.04;
+    }
+    if (active) applyCameraTransform(0);
+  }
 
   function syncVisualMeshes() {
     const isThird = active && viewMode === 'third';
@@ -604,7 +641,7 @@ export function createFirstPersonController(camera, domElement, scene, physics =
     playerPos.set(spawn.pos[0], spawn.pos[1], spawn.pos[2]);
     const gy = getStreetGroundY(playerPos.x, playerPos.z);
     if (gy !== null) playerPos.y = gy;
-    if (physics) {
+    if (physics && !activeZoneCtx) {
       physics.teleportPlayer(playerPos.x, playerPos.y, playerPos.z);
     }
     yaw = spawn.yaw;
@@ -648,6 +685,7 @@ export function createFirstPersonController(camera, domElement, scene, physics =
   function enter(spawnId = 'jiefang-bridge') {
     if (active) return;
     active = true;
+    activeZoneCtx = null;
     const spawn = ROAM_SPAWNS.find((s) => s.id === spawnId) || ROAM_SPAWNS[0];
     teleportTo(spawn);
     setDriveMode(false);
@@ -657,6 +695,20 @@ export function createFirstPersonController(camera, domElement, scene, physics =
 
     if (callbacks.onEnter) callbacks.onEnter();
     requestLock();
+  }
+
+  function enterInZone(zone) {
+    if (!zone) return;
+    if (!active) {
+      active = true;
+      setDriveMode(false);
+      syncVisualMeshes();
+      camera.fov = 64;
+      camera.updateProjectionMatrix();
+      if (callbacks.onEnter) callbacks.onEnter(zone);
+      requestLock();
+    }
+    setZoneContext(zone);
   }
 
   function exit() {
@@ -713,7 +765,7 @@ export function createFirstPersonController(camera, domElement, scene, physics =
       // Camera positioned behind look yaw (+sin(yaw), +cos(yaw) is backward since forward is -sin, -cos)
       const camX = playerPos.x + Math.sin(yaw) * horizDist;
       const camZ = playerPos.z + Math.cos(yaw) * horizDist;
-      const groundUnderCam = getStreetGroundY(camX, camZ);
+      const groundUnderCam = activeZoneCtx ? getZoneGroundY() : getStreetGroundY(camX, camZ);
       const minCamY = (groundUnderCam !== null ? groundUnderCam : 0.4) + 0.85;
       const camY = Math.max(minCamY, playerPos.y + focusHeight + vertOffset);
 
@@ -799,7 +851,7 @@ export function createFirstPersonController(camera, domElement, scene, physics =
         break;
       case 'Space':
         if (pressed && !driveMode) {
-          if (physics) {
+          if (physics && !activeZoneCtx) {
             if (physics.isGrounded() || Math.abs(physics.playerBody.velocity.y) < 0.15) {
               physics.playerBody.velocity.y = 9.2;
             }
@@ -811,8 +863,13 @@ export function createFirstPersonController(camera, domElement, scene, physics =
         keys.jump = pressed;
         e.preventDefault();
         break;
+      case 'KeyE':
+        if (pressed && callbacks.onInteract) {
+          callbacks.onInteract();
+        }
+        break;
       case 'KeyC':
-        if (pressed) setDriveMode(!driveMode);
+        if (pressed && !activeZoneCtx) setDriveMode(!driveMode);
         break;
       case 'KeyV':
         if (pressed) toggleViewMode();
@@ -894,7 +951,25 @@ export function createFirstPersonController(camera, domElement, scene, physics =
       velocity.z = THREE.MathUtils.lerp(velocity.z, targetVz, Math.min(1, dt * damping));
     }
 
-    if (physics) {
+    if (activeZoneCtx) {
+      // 1:1 Regional Instance walking & jumping bounds physics
+      const b = activeZoneCtx.roamSpawn.bounds || { minX: -45, maxX: 45, minZ: -45, maxZ: 45 };
+      const zoneSpeedScale = 0.72; // Natural 1:1 human walking pace inside detailed zones
+      playerPos.x = THREE.MathUtils.clamp(playerPos.x + velocity.x * zoneSpeedScale * dt, b.minX, b.maxX);
+      playerPos.z = THREE.MathUtils.clamp(playerPos.z + velocity.z * zoneSpeedScale * dt, b.minZ, b.maxZ);
+      const zoneGround = getZoneGroundY();
+      if (!isGrounded) {
+        verticalVel -= 22.0 * dt;
+        playerPos.y += verticalVel * dt;
+        if (playerPos.y <= zoneGround) {
+          playerPos.y = zoneGround;
+          verticalVel = 0;
+          isGrounded = true;
+        }
+      } else {
+        playerPos.y = THREE.MathUtils.lerp(playerPos.y, zoneGround, Math.min(1, dt * 14));
+      }
+    } else if (physics) {
       // Drive real cannon-es rigid-body physics (handles sloped ramps, bridge railings, buildings, mountains & air-walls!)
       physics.playerBody.velocity.x = velocity.x;
       physics.playerBody.velocity.z = velocity.z;
@@ -1007,26 +1082,31 @@ export function createFirstPersonController(camera, domElement, scene, physics =
       hudModeBadge.textContent = keys.sprint && horizSpeed > 5 ? '疾驰奔跑 SPRINT' : '街景步行 WALK';
     }
 
-    const district = getDistrictInfo(playerPos.x, playerPos.z);
-    if (district.title !== lastDistrictKey) {
-      lastDistrictKey = district.title;
-      if (hudDistrictTitle) hudDistrictTitle.textContent = district.title;
-      if (hudDistrictSub) hudDistrictSub.textContent = district.sub;
-    }
+    if (!activeZoneCtx) {
+      const district = getDistrictInfo(playerPos.x, playerPos.z);
+      if (district.title !== lastDistrictKey) {
+        lastDistrictKey = district.title;
+        if (hudDistrictTitle) hudDistrictTitle.textContent = district.title;
+        if (hudDistrictSub) hudDistrictSub.textContent = district.sub;
+      }
 
-    if (minimap) {
-      minimap.draw(playerPos.x, playerPos.z, yaw);
+      if (minimap) {
+        minimap.draw(playerPos.x, playerPos.z, yaw);
+      }
     }
   }
 
   return {
     enter,
+    enterInZone,
     exit,
+    setZoneContext,
     teleportTo,
     setDriveMode,
     setViewMode,
     toggleViewMode,
     update,
+    getPlayerPosition: () => playerPos,
     isActive: () => active,
     isDriveMode: () => driveMode,
     getViewMode: () => viewMode

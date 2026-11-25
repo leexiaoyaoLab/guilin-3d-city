@@ -236,6 +236,7 @@
     <!-- Top-Left Controls -->
     <div class="roam-topbar">
       <button class="roam-pill glass danger" id="btn-exit-roam">← 退出漫游 (ESC)</button>
+      <button class="roam-pill glass zone-exit-pill hidden" id="btn-roam-exit-zone">🌍 离开副本返回大世界</button>
       <button class="roam-pill glass" id="btn-roam-view">第一人称 (V)</button>
       <button class="roam-pill glass" id="btn-roam-drive">切换驾车 (C)</button>
       <div class="roam-time-pills glass">
@@ -280,6 +281,12 @@
       </div>
     </div>
 
+    <!-- Interactive RPG Portal Prompt (大世界/副本传送门交互提示) -->
+    <button class="portal-prompt glass hidden" id="portal-prompt">
+      <span class="portal-key">E</span>
+      <span id="portal-prompt-text">进入「东西巷 · 逍遥楼」1:1 高精副本</span>
+    </button>
+
     <!-- Bottom-Right Speedometer & Mode Badge -->
     <div class="roam-speedo glass">
       <div class="roam-mode-badge" id="roam-mode-badge">街景步行 WALK</div>
@@ -289,6 +296,9 @@
       </div>
     </div>
   </div>
+
+  <!-- Smooth Cinematic Portal Transition Fade Overlay -->
+  <div class="portal-fade" id="portal-fade"></div>
 
   <!-- Subtle Floating Restore HUD Button (when hidden) -->
   <button class="restore-hud-btn glass hidden" id="btn-restore-hud">显示控制面板 (H)</button>

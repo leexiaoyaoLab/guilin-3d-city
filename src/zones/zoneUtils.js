@@ -296,3 +296,85 @@ export function createDistantKarstRing(radius = 85, count = 14) {
   }
   return ring;
 }
+
+/**
+ * Creates a glowing, animated RPG-style 3D Portal Beacon (实景传送光柱)
+ * Used in both the Main World (to enter 1:1 zones) and inside Zones (to return to the Main World).
+ */
+export function createPortalBeacon(labelText, accentHex = 0x4ec4a7, scale = 1.0) {
+  const g = new THREE.Group();
+
+  // Outer rotating energy ring on ground
+  const ringMat = new THREE.MeshBasicMaterial({
+    color: accentHex,
+    transparent: true,
+    opacity: 0.85,
+    side: THREE.DoubleSide
+  });
+  const outerRing = new THREE.Mesh(new THREE.RingGeometry(1.45, 1.85, 32), ringMat);
+  outerRing.rotation.x = -Math.PI / 2;
+  outerRing.position.y = 0.08;
+  g.add(outerRing);
+
+  const innerRing = new THREE.Mesh(
+    new THREE.RingGeometry(0.9, 1.12, 24),
+    new THREE.MeshBasicMaterial({
+      color: 0xf5c756,
+      transparent: true,
+      opacity: 0.9,
+      side: THREE.DoubleSide
+    })
+  );
+  innerRing.rotation.x = -Math.PI / 2;
+  innerRing.position.y = 0.12;
+  g.add(innerRing);
+
+  // Translucent vertical light pillar
+  const beamMat = new THREE.MeshBasicMaterial({
+    color: accentHex,
+    transparent: true,
+    opacity: 0.24,
+    side: THREE.DoubleSide,
+    depthWrite: false
+  });
+  const beam = new THREE.Mesh(new THREE.CylinderGeometry(1.15, 1.45, 6.2, 20, 1, true), beamMat);
+  beam.position.y = 3.1;
+  g.add(beam);
+
+  // Floating golden portal diamond crystal
+  const crystalMat = new THREE.MeshStandardMaterial({
+    color: 0xffe48f,
+    emissive: accentHex,
+    emissiveIntensity: 1.4,
+    roughness: 0.2,
+    metalness: 0.7
+  });
+  const crystal = new THREE.Mesh(new THREE.OctahedronGeometry(0.45, 0), crystalMat);
+  crystal.position.y = 2.6;
+  g.add(crystal);
+
+  // Floating double-sided label plaque
+  const plaque = createChineseSignboard(labelText, 3.6, 0.88, {
+    bgHex: '#0d2229',
+    borderHex: '#f5c756',
+    textHex: '#fff1b8',
+    glowHex: '#4ec4a7'
+  });
+  plaque.position.y = 4.25;
+  g.add(plaque);
+
+  g.scale.setScalar(scale);
+  g.userData.anim = { outerRing, innerRing, beam, crystal, plaque };
+  return g;
+}
+
+export function animatePortalBeacon(beacon, elapsed) {
+  const a = beacon && beacon.userData && beacon.userData.anim;
+  if (!a) return;
+  a.outerRing.rotation.z = elapsed * 0.75;
+  a.innerRing.rotation.z = -elapsed * 1.25;
+  a.crystal.rotation.y = elapsed * 1.6;
+  a.crystal.position.y = 2.55 + Math.sin(elapsed * 2.8) * 0.24;
+  a.plaque.position.y = 4.2 + Math.sin(elapsed * 2.1) * 0.14;
+  a.beam.material.opacity = 0.18 + Math.sin(elapsed * 3.0) * 0.06;
+}
