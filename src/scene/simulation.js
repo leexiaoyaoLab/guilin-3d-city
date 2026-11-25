@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { getLiRiverCenterX, getLiRiverHalfWidth } from '../data/landmarksData.js';
+import { getBridgeSurfaceY, getLiRiverCenterX, getLiRiverHalfWidth } from '../data/landmarksData.js';
 
 /**
  * Living Guilin City Simulation Agents:
@@ -399,6 +399,12 @@ export function createSimulation(scene) {
       const nextT = Math.min(0.999, car.t + 0.004);
       car.curve.getPointAt(car.t, tmpPos);
       car.curve.getPointAt(nextT, tmpNext);
+
+      // Snap car elevation smoothly to sloped bridge ramps & flat roads
+      const byCur = getBridgeSurfaceY(tmpPos.x, tmpPos.z, 1.0);
+      const byNext = getBridgeSurfaceY(tmpNext.x, tmpNext.z, 1.0);
+      tmpPos.y = (byCur !== null ? byCur : 0.62) + 0.08;
+      tmpNext.y = (byNext !== null ? byNext : 0.62) + 0.08;
 
       car.mesh.position.copy(tmpPos);
       car.mesh.lookAt(tmpNext);

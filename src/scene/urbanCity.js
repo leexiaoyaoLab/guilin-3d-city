@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {
+  BRIDGES,
   getLiRiverCenterX,
   getLiRiverHalfWidth,
   isWaterOrShore,
@@ -168,15 +169,20 @@ function createRoadNetwork(nightGlowMats) {
   }
 
   // Main urban avenues
-  // 1. 中山中路 (Zhongshan Central Rd) - North-South x = -45
-  addStraightRoad(-45, -130, -45, 18, 7.6);
-  addStraightRoad(-45, 33, -45, 128, 7.6);
+  // 1. 中山中路 (Zhongshan Central Rd) - North-South x = -45, meeting Yangqiao & Peach Bridge ramps cleanly
+  const yangqiao = BRIDGES.find((b) => b.id === 'yangqiao-bridge');
+  const peachB = BRIDGES.find((b) => b.id === 'peach-bridge');
+  const yqHalf = yangqiao.spanLength / 2 + yangqiao.rampLength;
+  const pbHalf = peachB.spanLength / 2 + peachB.rampLength;
+  addStraightRoad(-45, -130, -45, yangqiao.cz - yqHalf, 7.6);
+  addStraightRoad(-45, yangqiao.cz + yqHalf, -45, peachB.cz - pbHalf, 7.6);
+  addStraightRoad(-45, peachB.cz + pbHalf, -45, 132, 7.6);
 
-  // 2. 解放路 (Jiefang Rd) - East-West z = -25 (west & east approaches to Jiefang Bridge)
-  const liBridgeX = getLiRiverCenterX(-25);
-  const liBridgeHalfW = getLiRiverHalfWidth(-25) + 7;
-  addStraightRoad(-138, -25, liBridgeX - liBridgeHalfW, -25, 8.2);
-  addStraightRoad(liBridgeX + liBridgeHalfW, -25, 132, -25, 8.2);
+  // 2. 解放路 (Jiefang Rd) - East-West z = -25, meeting Jiefang Bridge approach ramp toes cleanly
+  const jiefang = BRIDGES.find((b) => b.id === 'jiefang-bridge');
+  const jfHalf = jiefang.spanLength / 2 + jiefang.rampLength;
+  addStraightRoad(-138, -25, jiefang.cx - jfHalf, -25, 8.2);
+  addStraightRoad(jiefang.cx + jfHalf, -25, 132, -25, 8.2);
 
   // 3. 杉湖/榕湖北路 (Lakeside North Ave) z = 1.5
   addStraightRoad(-126, 1.5, 22, 1.5, 5.8);
@@ -256,7 +262,7 @@ function createRoadNetwork(nightGlowMats) {
 /**
  * Create Guilin's Simulated Urban Districts + Osmanthus Trees + Interactive Builder Helper
  */
-export function createUrbanCity(scene) {
+export function createUrbanCity(scene, physics = null) {
   const group = new THREE.Group();
   group.name = 'GuilinUrbanCity';
 
@@ -347,8 +353,12 @@ export function createUrbanCity(scene) {
       }
 
       buildingsGroup.add(bGroup);
+      const physBody = physics
+        ? physics.addBoxCollider(x, 0.45 + h / 2, z, w + 0.3, h + 1.0, d + 0.3, bGroup.rotation.y, true)
+        : null;
       buildingEntries.push({
         mesh: bGroup,
+        physBody,
         priority: rand() // Used when user adjusts urban density slider
       });
     }
@@ -485,6 +495,9 @@ export function createUrbanCity(scene) {
     }
 
     userBuiltGroup.add(item);
+    if (physics && type !== 'grove') {
+      physics.addBoxCollider(x, 4.0, z, 6.8, 8.0, 6.8, 0, true);
+    }
     return item;
   }
 
@@ -494,6 +507,9 @@ export function createUrbanCity(scene) {
     for (const entry of buildingEntries) {
       const show = entry.priority <= densityFactor;
       entry.mesh.visible = show;
+      if (entry.physBody) {
+        entry.physBody.collisionResponse = show;
+      }
       if (show) visibleCount++;
     }
     return visibleCount;

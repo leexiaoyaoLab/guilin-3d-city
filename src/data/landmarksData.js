@@ -127,6 +127,91 @@ export function isOnRoad(x, z, extraMargin = 0) {
   return false;
 }
 
+export const BRIDGES = [
+  {
+    id: 'jiefang-bridge',
+    name: '解放桥',
+    axis: 'x',
+    cx: getLiRiverCenterX(-25),
+    cz: -25,
+    spanLength: 52,
+    rampLength: 16,
+    width: 9.2,
+    baseY: 0.58,
+    deckY: 3.85,
+    style: 'jiefang'
+  },
+  {
+    id: 'yangqiao-bridge',
+    name: '阳桥',
+    axis: 'z',
+    cx: -45,
+    cz: 25.5,
+    spanLength: 12,
+    rampLength: 9,
+    width: 7.8,
+    baseY: 0.58,
+    deckY: 2.35,
+    style: 'stone'
+  },
+  {
+    id: 'binjiang-bridge',
+    name: '滨江拱桥',
+    axis: 'z',
+    cx: 14,
+    cz: 26,
+    spanLength: 10,
+    rampLength: 7.5,
+    width: 5.4,
+    baseY: 0.58,
+    deckY: 2.2,
+    style: 'stone'
+  },
+  {
+    id: 'peach-bridge',
+    name: '桃花江大桥',
+    axis: 'z',
+    cx: -45,
+    cz: getPeachRiverCenterZ(-45),
+    spanLength: 20,
+    rampLength: 10,
+    width: 8.0,
+    baseY: 0.58,
+    deckY: 2.55,
+    style: 'stone'
+  }
+];
+
+/**
+ * Exact bridge surface elevation at world (x, z), or null if outside all bridges.
+ * Matches both the 3D sloped bridge meshes and the cannon-es physics ramp colliders.
+ */
+export function getBridgeSurfaceY(x, z, extraWidth = 0) {
+  for (const b of BRIDGES) {
+    const along = b.axis === 'x' ? Math.abs(x - b.cx) : Math.abs(z - b.cz);
+    const across = b.axis === 'x' ? Math.abs(z - b.cz) : Math.abs(x - b.cx);
+    const halfSpan = b.spanLength / 2;
+    const totalHalf = halfSpan + b.rampLength;
+
+    if (across <= b.width / 2 + extraWidth && along <= totalHalf) {
+      if (along <= halfSpan) {
+        return b.deckY;
+      }
+      const t = 1 - (along - halfSpan) / b.rampLength; // 1 at span edge, 0 at ground toe
+      return b.baseY + t * (b.deckY - b.baseY);
+    }
+  }
+
+  // Ronghu Crystal Bridge (榕湖玻璃桥) centered around (-88, 25)
+  const dCrystal = Math.hypot(x - (-88), z - 25);
+  if (dCrystal < 11.2) {
+    const arch = Math.max(0, 1 - dCrystal / 11.2);
+    return 0.58 + arch * 2.35;
+  }
+
+  return null;
+}
+
 export const LANDMARKS = [
   {
     id: 'overview',

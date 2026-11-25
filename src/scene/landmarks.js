@@ -444,7 +444,7 @@ function createHistoricQuarter(nightMaterials) {
   return group;
 }
 
-export function createLandmarks(scene) {
+export function createLandmarks(scene, physics = null) {
   const group = new THREE.Group();
   group.name = 'GuilinLandmarks';
 
@@ -455,6 +455,35 @@ export function createLandmarks(scene) {
   group.add(createJingjiangPalace(nightMaterials));
   group.add(createAncientSouthGate(nightMaterials));
   group.add(createHistoricQuarter(nightMaterials));
+
+  // Register solid physics colliders for palace walls, gates, and historic buildings
+  if (physics) {
+    // Jingjiang Palace enclosure walls & halls (-32, -46)
+    physics.addBoxCollider(-32, 2.5, -64, 38, 5, 1.4); // North wall
+    physics.addBoxCollider(-51, 2.5, -46, 1.4, 5, 36); // West wall
+    physics.addBoxCollider(-13, 2.5, -46, 1.4, 5, 36); // East wall
+    physics.addBoxCollider(-44.5, 2.5, -28, 13, 5, 1.4); // South-west wall
+    physics.addBoxCollider(-19.5, 2.5, -28, 13, 5, 1.4); // South-east wall
+    physics.addBoxCollider(-32, 3.0, -28, 11.5, 6, 4.2); // Chengyun Gate
+    physics.addBoxCollider(-32, 2.5, -36.5, 13, 5, 6.2); // Main hall
+    physics.addBoxCollider(-44.5, 2.0, -42, 4.2, 4, 11); // West wing
+    physics.addBoxCollider(-19.5, 2.0, -42, 4.2, 4, 11); // East wing
+
+    // Ancient South Gate (-78, 4.2) & Banyan Tree
+    physics.addBoxCollider(-78, 2.5, 4.2, 11, 5, 4.8);
+    physics.addCylinderCollider(-69.4, 5.4, 2.0, 6);
+
+    // East-West Alley & Zhengyang Pedestrian Street buildings
+    const alleyBoxes = [
+      [-6, -48, 6.2, 4.6], [2.5, -48, 6.6, 4.8], [-6, -39, 6.4, 4.5],
+      [2.5, -39, 6.8, 5.2], [9.5, -43, 4.8, 7.5],
+      [-9, -15, 5.8, 4.8], [-1, -15, 6.2, 4.8], [7, -15, 5.6, 5.0],
+      [-9, -7, 6.0, 4.8], [-1, -7, 6.5, 4.6], [7, -7, 5.6, 4.8]
+    ];
+    for (const [bx, bz, bw, bd] of alleyBoxes) {
+      physics.addBoxCollider(bx, 3.0, bz, bw, 6, bd);
+    }
+  }
 
   scene.add(group);
   return { group, nightMaterials, pointLights };

@@ -277,7 +277,7 @@ function createSummitPavilion(nightGlowMats) {
   return g;
 }
 
-export function createKarstMountains(scene) {
+export function createKarstMountains(scene, physics = null) {
   const group = new THREE.Group();
   group.name = 'KarstMountains';
   const nightGlowMats = [];
@@ -285,6 +285,10 @@ export function createKarstMountains(scene) {
   // 1. 象鼻山 (Elephant Trunk Hill)
   const elephantHill = createElephantTrunkHill(nightGlowMats);
   group.add(elephantHill);
+  if (physics) {
+    physics.addCylinderCollider(23, 77, 12.5, 24);
+    physics.addCylinderCollider(31, 77.5, 8.0, 20);
+  }
 
   // 2. 独秀峰 (Solitary Beauty Peak) - Sheer vertical peak inside Jingjiang Palace (-32, -48)
   const duxiuPeak = createKarstPeakMesh(11.5, 10.5, 34, 303, {
@@ -294,6 +298,7 @@ export function createKarstMountains(scene) {
   duxiuPeak.position.set(-32, 0, -48);
   duxiuPeak.userData.landmarkId = 'jingjiang-palace';
   group.add(duxiuPeak);
+  if (physics) physics.addCylinderCollider(-32, -48, 10.5, 34);
 
   // Small summit pavilion on Solitary Beauty Peak (独秀亭)
   const duxiuPav = createSummitPavilion(nightGlowMats);
@@ -310,16 +315,19 @@ export function createKarstMountains(scene) {
   fubo.position.set(18, 0, -68);
   fubo.userData.landmarkId = 'fubo-diecai';
   group.add(fubo);
+  if (physics) physics.addCylinderCollider(18, -68, 11.2, 30);
 
   // 4. 叠彩山 (Diecai Hill) - Multi-peak terraced landmark north of Fubo Hill
   const diecaiGroup = new THREE.Group();
   const dcMain = createKarstPeakMesh(15.5, 13.0, 39, 505, { domePow: 0.44, cliffThreshold: 0.5 });
   dcMain.position.set(12, 0, -116);
   diecaiGroup.add(dcMain);
+  if (physics) physics.addCylinderCollider(12, -116, 13.8, 39);
 
   const dcSub = createKarstPeakMesh(10.5, 9.5, 27, 506, { domePow: 0.46 });
   dcSub.position.set(-3, 0, -110);
   diecaiGroup.add(dcSub);
+  if (physics) physics.addCylinderCollider(-3, -110, 9.6, 27);
 
   const nayunPav = createSummitPavilion(nightGlowMats);
   nayunPav.position.set(12, 38.2, -116);
@@ -340,16 +348,19 @@ export function createKarstMountains(scene) {
     const pk = createKarstPeakMesh(rx, rz, h, seed, { domePow: 0.45 });
     pk.position.set(x, 0, z);
     group.add(pk);
+    if (physics) physics.addCylinderCollider(x, z, (rx + rz) * 0.46, h);
   }
 
   // 6. 穿山 & 塔山 (Chuanshan & Pagoda Hill in Southeast)
   const chuanshan = createKarstPeakMesh(17, 13, 38, 701, { domePow: 0.42, cliffThreshold: 0.5 });
   chuanshan.position.set(116, 0, 98);
   group.add(chuanshan);
+  if (physics) physics.addCylinderCollider(116, 98, 14.5, 38);
 
   const tashan = createKarstPeakMesh(11, 10, 29, 702, { domePow: 0.38 });
   tashan.position.set(95, 0, 108);
   group.add(tashan);
+  if (physics) physics.addCylinderCollider(95, 108, 10.0, 29);
 
   // Summit Shoushan Pagoda on Tashan
   const tashanPagoda = createSummitPavilion(nightGlowMats);
@@ -369,6 +380,7 @@ export function createKarstMountains(scene) {
     const pk = createKarstPeakMesh(rx, rz, h, seed, { domePow: 0.46 });
     pk.position.set(x, 0, z);
     group.add(pk);
+    if (physics) physics.addCylinderCollider(x, z, (rx + rz) * 0.46, h);
   }
 
   // 8. Iconic Outer Ring of Guilin Karst Horizon Peaks (Layered Chinese Ink Landscape Silhouette!)

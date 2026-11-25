@@ -7,6 +7,7 @@ import { createLandmarks } from './scene/landmarks.js';
 import { createUrbanCity } from './scene/urbanCity.js';
 import { createAtmosphere } from './scene/atmosphere.js';
 import { createSimulation } from './scene/simulation.js';
+import { createPhysicsWorld } from './scene/physicsWorld.js';
 import { createFirstPersonController, ROAM_SPAWNS } from './scene/firstPersonMode.js';
 
 // =========================================================
@@ -37,13 +38,14 @@ controls.target.set(-5, 8, 12);
 controls.update();
 
 // =========================================================
-// 2. BUILD GUILIN 3D CITY MODULES
+// 2. BUILD GUILIN 3D CITY MODULES & CANNON-ES PHYSICS WORLD
 // =========================================================
+const physicsWorld = createPhysicsWorld();
 const atmosphere = createAtmosphere(scene);
 const terrainSystem = createTerrainAndWater(scene);
-const karstSystem = createKarstMountains(scene);
-const landmarkSystem = createLandmarks(scene);
-const urbanSystem = createUrbanCity(scene);
+const karstSystem = createKarstMountains(scene, physicsWorld);
+const landmarkSystem = createLandmarks(scene, physicsWorld);
+const urbanSystem = createUrbanCity(scene, physicsWorld);
 const simSystem = createSimulation(scene);
 
 // Saved Orbit camera state when entering First-Person Roaming Mode
@@ -51,7 +53,7 @@ let savedOrbitPos = new THREE.Vector3(-95, 92, 138);
 let savedOrbitTarget = new THREE.Vector3(-5, 8, 12);
 
 const roamHudEl = document.getElementById('roam-hud');
-const firstPerson = createFirstPersonController(camera, renderer.domElement, scene, {
+const firstPerson = createFirstPersonController(camera, renderer.domElement, scene, physicsWorld, {
   onEnter: () => {
     savedOrbitPos.copy(camera.position);
     savedOrbitTarget.copy(controls.target);

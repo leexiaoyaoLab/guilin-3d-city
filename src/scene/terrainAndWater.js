@@ -1,8 +1,6 @@
 import * as THREE from 'three';
 import {
-  getLiRiverCenterX,
-  getLiRiverHalfWidth,
-  getPeachRiverCenterZ,
+  BRIDGES,
   getWaterDepth,
   isOnRoad
 } from '../data/landmarksData.js';
@@ -252,35 +250,26 @@ export function createTerrainAndWater(scene) {
   waterMesh.name = 'GuilinWater';
   group.add(waterMesh);
 
-  // 3. Bridges across Two Rivers & Four Lakes
+  // 3. Bridges across Two Rivers & Four Lakes (with true sculpted approach ramps!)
   const bridgeLights = [];
   const bridgesGroup = new THREE.Group();
   bridgesGroup.name = 'Bridges';
 
-  // (A) 解放桥 (Jiefang Bridge) across Li River at z = -25
-  const liBridgeX = getLiRiverCenterX(-25);
-  const liBridgeHalfW = getLiRiverHalfWidth(-25) + 8;
-  const jiefangBridge = createJiefangBridge(liBridgeX, -25, liBridgeHalfW * 2, bridgeLights);
-  jiefangBridge.userData = { landmarkId: 'jiefang-bridge' };
-  bridgesGroup.add(jiefangBridge);
+  for (const b of BRIDGES) {
+    const bridgeMesh =
+      b.style === 'jiefang'
+        ? createJiefangBridge(b, bridgeLights)
+        : createStoneArchBridge(b, 0xd8d1c2, bridgeLights);
+    if (b.id === 'jiefang-bridge') {
+      bridgeMesh.userData = { landmarkId: 'jiefang-bridge' };
+    }
+    bridgesGroup.add(bridgeMesh);
+  }
 
-  // (B) 阳桥 (Yangqiao Bridge) on Zhongshan Road between Shan Lake & Rong Lake at x = -45, z = 25.5
-  const yangqiao = createStoneArchBridge(-45, 25.5, 16, 7.6, Math.PI / 2, 0xd8d1c2, bridgeLights);
-  bridgesGroup.add(yangqiao);
-
-  // (C) 滨江人行拱桥 (Binjiang Canal Bridge) between Shan Lake and Li River
-  const binjiangBridge = createStoneArchBridge(14, 26, 13, 5.2, Math.PI / 2, 0xd6cfc0, bridgeLights);
-  bridgesGroup.add(binjiangBridge);
-
-  // (D) 榕湖玻璃桥 (Ronghu Crystal Arch Bridge) spanning Rong Lake to island
+  // Ronghu Crystal Arch Bridge (榕湖玻璃桥) spanning Rong Lake to island
   const crystalBridge = createCrystalBridge(-88, 25, 22, bridgeLights);
   crystalBridge.userData = { landmarkId: 'ronghu-gate' };
   bridgesGroup.add(crystalBridge);
-
-  // (E) 桃花江大桥 (Peach Blossom River Bridge) on Zhongshan South Road at x = -45
-  const peachZAtZhongshan = getPeachRiverCenterZ(-45);
-  const peachBridge = createStoneArchBridge(-45, peachZAtZhongshan, 26, 8.0, Math.PI / 2, 0xc9c4b8, bridgeLights);
-  bridgesGroup.add(peachBridge);
 
   group.add(bridgesGroup);
 
@@ -298,10 +287,77 @@ export function createTerrainAndWater(scene) {
   };
 }
 
-function createJiefangBridge(centerX, centerZ, length, bridgeLights) {
-  const g = new THREE.Group();
-  g.position.set(centerX, 0, centerZ);
+/**
+ * Helper: creates two solid sloped approach ramps (引桥上下坡) + sloped balustrades
+ * + solid stone ramp abutments so every bridge smoothly meets the city road surface.
+ */
+function addSlopedBridgeRamps(g, b, deckMat, stoneMat) {
+  const rise = b.deckY - b.baseY;
+  const rampHyp = Math.hypot(b.rampLength, rise);
+  const rampAngle = Math.atan2(rise, b.rampLength);
+  const halfSpan = b.spanLength / 2;
+  const rampCenterX = halfSpan + b.rampLength / 2;
+  const rampMidY = (b.baseY + b.deckY) / 2;
+  const deckThick = 0.65;
 
+  // Build trapezoidal wedge abutment geometry under each ramp so there is no floating gap
+  const wedgeShape = new THREE.Shape();
+  wedgeShape.moveTo(0, b.baseY - 0.5);
+  wedgeShape.lineTo(b.rampLength, b.baseY - 0.5);
+  wedgeShape.lineTo(b.rampLength, b.deckY - 0.35);
+  wedgeShape.lineTo(0, b.baseY - 0.05);
+  wedgeShape.closePath();
+
+  const wedgeGeo = new THREE.ExtrudeGeometry(wedgeShape, {
+    depth: b.width - 0.5,
+    bevelEnabled: false
+  });
+  wedgeGeo.translate(0, 0, -(b.width - 0.5) / 2);
+
+  for (const dir of [-1, 1]) {
+    // Sloped road deck surface
+    const rampDeck = new THREE.Mesh(
+      new THREE.BoxGeometry(rampHyp + 0.3, deckThick, b.width),
+      deckMat
+    );
+    rampDeck.position.set(dir * rampCenterX, rampMidY - deckThick / 2, 0);
+    rampDeck.rotation.z = dir === -1 ? rampAngle : -rampAngle;
+    rampDeck.castShadow = true;
+    rampDeck.receiveShadow = true;
+    g.add(rampDeck);
+
+    // Solid stone ramp abutment wall underneath
+    const wedge = new THREE.Mesh(wedgeGeo, stoneMat);
+    if (dir === -1) {
+      wedge.position.set(-halfSpan - b.rampLength, 0, 0);
+    } else {
+      wedge.scale.x = -1;
+      wedge.position.set(halfSpan + b.rampLength, 0, 0);
+    }
+    wedge.castShadow = true;
+    wedge.receiveShadow = true;
+    g.add(wedge);
+
+    // Continuous sloped balustrades on both sides of the ramp
+    for (const side of [-b.width / 2 + 0.24, b.width / 2 - 0.24]) {
+      const rail = new THREE.Mesh(
+        new THREE.BoxGeometry(rampHyp + 0.2, 0.82, 0.4),
+        stoneMat
+      );
+      rail.position.set(dir * rampCenterX, rampMidY + 0.38, side);
+      rail.rotation.z = dir === -1 ? rampAngle : -rampAngle;
+      rail.castShadow = true;
+      g.add(rail);
+    }
+  }
+}
+
+function createJiefangBridge(b, bridgeLights) {
+  const g = new THREE.Group();
+  g.position.set(b.cx, 0, b.cz);
+  if (b.axis === 'z') g.rotation.y = Math.PI / 2;
+
+  const length = b.spanLength;
   const deckMat = new THREE.MeshStandardMaterial({ color: 0x52565c, roughness: 0.85 });
   const stoneMat = new THREE.MeshStandardMaterial({ color: 0xd9d2c5, roughness: 0.65 });
   const archGlowMat = new THREE.MeshStandardMaterial({
@@ -312,38 +368,42 @@ function createJiefangBridge(centerX, centerZ, length, bridgeLights) {
   });
   bridgeLights.push(archGlowMat);
 
-  // Road deck with gentle arch rise
-  const deckGeo = new THREE.BoxGeometry(length, 1.0, 9.2);
-  const deck = new THREE.Mesh(deckGeo, deckMat);
-  deck.position.y = 3.4;
+  // Main flat road deck (top surface exactly at b.deckY)
+  const deckThick = 0.7;
+  const deck = new THREE.Mesh(new THREE.BoxGeometry(length + 0.3, deckThick, b.width), deckMat);
+  deck.position.y = b.deckY - deckThick / 2;
   deck.castShadow = true;
   deck.receiveShadow = true;
   g.add(deck);
 
-  // Side balustrades
-  for (const side of [-4.3, 4.3]) {
+  // Sloped East & West Approach Ramps (引桥上下坡)
+  addSlopedBridgeRamps(g, b, deckMat, stoneMat);
+
+  // Side balustrades on main span
+  for (const side of [-b.width / 2 + 0.25, b.width / 2 - 0.25]) {
     const rail = new THREE.Mesh(new THREE.BoxGeometry(length, 0.85, 0.45), stoneMat);
-    rail.position.set(0, 4.25, side);
+    rail.position.set(0, b.deckY + 0.4, side);
     rail.castShadow = true;
     g.add(rail);
   }
 
-  // Three graceful stone arches + piers
+  // Three graceful stone arches + submerged piers (pier tops sit cleanly BELOW road deck!)
   const numSpans = 3;
   const spanLen = length / numSpans;
   for (let i = 0; i <= numSpans; i++) {
     const px = -length / 2 + i * spanLen;
-    const pier = new THREE.Mesh(new THREE.BoxGeometry(2.2, 5.2, 9.8), stoneMat);
-    pier.position.set(px, 1.0, 0);
+    const pierH = b.deckY + 0.8;
+    const pier = new THREE.Mesh(new THREE.BoxGeometry(2.1, pierH, b.width + 0.4), stoneMat);
+    pier.position.set(px, pierH / 2 - 1.1, 0);
     pier.castShadow = true;
     g.add(pier);
 
     if (i < numSpans) {
       const archCenterX = px + spanLen / 2;
       const archGeo = new THREE.TorusGeometry(spanLen * 0.48, 0.55, 8, 22, Math.PI);
-      for (const side of [-4.1, 4.1]) {
+      for (const side of [-b.width / 2 + 0.45, b.width / 2 - 0.45]) {
         const arch = new THREE.Mesh(archGeo, stoneMat);
-        arch.position.set(archCenterX, 0.6, side);
+        arch.position.set(archCenterX, 0.85, side);
         g.add(arch);
 
         // Glowing night contour strip along the arch
@@ -351,13 +411,13 @@ function createJiefangBridge(centerX, centerZ, length, bridgeLights) {
           new THREE.TorusGeometry(spanLen * 0.45, 0.16, 6, 20, Math.PI),
           archGlowMat
         );
-        lightArch.position.set(archCenterX, 0.6, side + Math.sign(side) * 0.35);
+        lightArch.position.set(archCenterX, 0.85, side + Math.sign(side) * 0.35);
         g.add(lightArch);
       }
     }
   }
 
-  // Traditional ornate lamp posts along the bridge
+  // Traditional ornate lamp posts along main span
   const poleMat = new THREE.MeshStandardMaterial({ color: 0x3a3d42, metalness: 0.5, roughness: 0.4 });
   const bulbMat = new THREE.MeshStandardMaterial({
     color: 0xfff3cc,
@@ -366,14 +426,14 @@ function createJiefangBridge(centerX, centerZ, length, bridgeLights) {
   });
   bridgeLights.push(bulbMat);
 
-  for (let x = -length / 2 + 5; x <= length / 2 - 5; x += 9) {
-    for (const side of [-4.1, 4.1]) {
+  for (let x = -length / 2 + 4; x <= length / 2 - 4; x += 9) {
+    for (const side of [-b.width / 2 + 0.45, b.width / 2 - 0.45]) {
       const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.13, 2.8, 6), poleMat);
-      pole.position.set(x, 5.6, side);
+      pole.position.set(x, b.deckY + 1.8, side);
       g.add(pole);
 
       const globe = new THREE.Mesh(new THREE.SphereGeometry(0.32, 8, 8), bulbMat);
-      globe.position.set(x, 7.1, side);
+      globe.position.set(x, b.deckY + 3.3, side);
       g.add(globe);
     }
   }
@@ -381,11 +441,13 @@ function createJiefangBridge(centerX, centerZ, length, bridgeLights) {
   return g;
 }
 
-function createStoneArchBridge(cx, cz, length, width, rotY, colorHex, bridgeLights) {
+function createStoneArchBridge(b, colorHex, bridgeLights) {
   const g = new THREE.Group();
-  g.position.set(cx, 0, cz);
-  g.rotation.y = rotY;
+  g.position.set(b.cx, 0, b.cz);
+  if (b.axis === 'z') g.rotation.y = Math.PI / 2;
 
+  const length = b.spanLength;
+  const width = b.width;
   const stoneMat = new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.72 });
   const roadMat = new THREE.MeshStandardMaterial({ color: 0x5c6066, roughness: 0.88 });
   const glowMat = new THREE.MeshStandardMaterial({
@@ -395,23 +457,28 @@ function createStoneArchBridge(cx, cz, length, width, rotY, colorHex, bridgeLigh
   });
   bridgeLights.push(glowMat);
 
-  const deck = new THREE.Mesh(new THREE.BoxGeometry(length, 0.75, width), roadMat);
-  deck.position.y = 2.05;
+  // Main flat deck (top at b.deckY)
+  const deckThick = 0.65;
+  const deck = new THREE.Mesh(new THREE.BoxGeometry(length + 0.3, deckThick, width), roadMat);
+  deck.position.y = b.deckY - deckThick / 2;
   deck.castShadow = true;
   deck.receiveShadow = true;
   g.add(deck);
 
+  // Sloped Approach Ramps (引桥上下坡)
+  addSlopedBridgeRamps(g, b, roadMat, stoneMat);
+
   for (const side of [-width / 2 + 0.25, width / 2 - 0.25]) {
-    const rail = new THREE.Mesh(new THREE.BoxGeometry(length, 0.7, 0.35), stoneMat);
-    rail.position.set(0, 2.7, side);
+    const rail = new THREE.Mesh(new THREE.BoxGeometry(length, 0.75, 0.36), stoneMat);
+    rail.position.set(0, b.deckY + 0.36, side);
     g.add(rail);
 
-    const arch = new THREE.Mesh(new THREE.TorusGeometry(length * 0.32, 0.38, 7, 18, Math.PI), stoneMat);
-    arch.position.set(0, 0.35, side);
+    const arch = new THREE.Mesh(new THREE.TorusGeometry(length * 0.42, 0.38, 7, 18, Math.PI), stoneMat);
+    arch.position.set(0, 0.4, side);
     g.add(arch);
 
-    const strip = new THREE.Mesh(new THREE.TorusGeometry(length * 0.30, 0.12, 6, 16, Math.PI), glowMat);
-    strip.position.set(0, 0.35, side + Math.sign(side) * 0.22);
+    const strip = new THREE.Mesh(new THREE.TorusGeometry(length * 0.40, 0.12, 6, 16, Math.PI), glowMat);
+    strip.position.set(0, 0.4, side + Math.sign(side) * 0.22);
     g.add(strip);
   }
 

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {
+  getBridgeSurfaceY,
   getLiRiverCenterX,
-  getLiRiverHalfWidth,
   getPeachRiverCenterZ,
   getWaterDepth
 } from '../data/landmarksData.js';
@@ -55,45 +55,12 @@ export const ROAM_SPAWNS = [
 ];
 
 /**
- * Computes walkable/drivable ground elevation including bridges over rivers & lakes
+ * Computes walkable/drivable ground elevation including sloped bridges over rivers & lakes
  */
 export function getStreetGroundY(x, z) {
-  // 1. 解放桥 (Jiefang Bridge) across Li River at z = -25
-  const liBridgeX = getLiRiverCenterX(-25);
-  const liBridgeHalfW = getLiRiverHalfWidth(-25) + 9;
-  if (Math.abs(z - (-25)) < 5.0 && Math.abs(x - liBridgeX) <= liBridgeHalfW) {
-    const edgeDist = liBridgeHalfW - Math.abs(x - liBridgeX);
-    const ramp = Math.min(1, edgeDist / 7.5);
-    return 0.55 + ramp * 3.35;
-  }
-
-  // 2. 阳桥 (Yangqiao Bridge) on Zhongshan Rd between Shan Lake & Rong Lake (x = -45, z = 25.5)
-  if (Math.abs(x - (-45)) < 4.5 && Math.abs(z - 25.5) <= 9.5) {
-    const edgeDist = 9.5 - Math.abs(z - 25.5);
-    const ramp = Math.min(1, edgeDist / 3.0);
-    return 0.55 + ramp * 1.9;
-  }
-
-  // 3. 滨江人行拱桥 (Binjiang Canal Bridge) at x = 14, z = 26
-  if (Math.abs(x - 14) < 3.4 && Math.abs(z - 26) <= 7.5) {
-    const edgeDist = 7.5 - Math.abs(z - 26);
-    const ramp = Math.min(1, edgeDist / 2.5);
-    return 0.55 + ramp * 1.85;
-  }
-
-  // 4. 桃花江大桥 (Peach Blossom River Bridge) on Zhongshan Rd (x = -45)
-  const peachZ = getPeachRiverCenterZ(-45);
-  if (Math.abs(x - (-45)) < 4.6 && Math.abs(z - peachZ) <= 14.5) {
-    const edgeDist = 14.5 - Math.abs(z - peachZ);
-    const ramp = Math.min(1, edgeDist / 3.5);
-    return 0.55 + ramp * 1.9;
-  }
-
-  // 5. 榕湖玻璃桥 (Ronghu Crystal Bridge) around (-88, 25)
-  if (Math.hypot(x - (-88), z - 25) < 11.5) {
-    const dist = Math.hypot(x - (-88), z - 25);
-    const arch = Math.max(0, 1 - dist / 11.5);
-    return 0.55 + arch * 2.4;
+  const bridgeY = getBridgeSurfaceY(x, z, 0.2);
+  if (bridgeY !== null) {
+    return bridgeY;
   }
 
   // Water check: returns null if deep water (blocks walking into river/lake)
@@ -102,10 +69,7 @@ export function getStreetGroundY(x, z) {
     return null;
   }
 
-  // Gentle basin slope outside city center
-  const distFromCenter = Math.hypot(x, z);
-  const outerSlope = Math.max(0, (distFromCenter - 125) / 110) * 3.5;
-  return 0.55 + outerSlope;
+  return 0.55;
 }
 
 /**
@@ -554,7 +518,7 @@ function createExteriorCruiserCar() {
 /**
  * Main GTA-style First-Person & Third-Person Immersive Street Roaming Controller
  */
-export function createFirstPersonController(camera, domElement, scene, callbacks = {}) {
+export function createFirstPersonController(camera, domElement, scene, physics = null, callbacks = {}) {
   let active = false;
   let driveMode = false; // false = Walk/Sprint, true = Street Cruiser Drive
   let viewMode = 'first'; // 'first' | 'third'
@@ -628,6 +592,9 @@ export function createFirstPersonController(camera, domElement, scene, callbacks
     playerPos.set(spawn.pos[0], spawn.pos[1], spawn.pos[2]);
     const gy = getStreetGroundY(playerPos.x, playerPos.z);
     if (gy !== null) playerPos.y = gy;
+    if (physics) {
+      physics.teleportPlayer(playerPos.x, playerPos.y, playerPos.z);
+    }
     yaw = spawn.yaw;
     avatarYaw = spawn.yaw;
     pitch = spawn.pitch;
@@ -819,9 +786,15 @@ export function createFirstPersonController(camera, domElement, scene, callbacks
         keys.sprint = pressed;
         break;
       case 'Space':
-        if (pressed && isGrounded && !driveMode) {
-          verticalVel = 7.8;
-          isGrounded = false;
+        if (pressed && !driveMode) {
+          if (physics) {
+            if (physics.isGrounded() || Math.abs(physics.playerBody.velocity.y) < 0.15) {
+              physics.playerBody.velocity.y = 9.2;
+            }
+          } else if (isGrounded) {
+            verticalVel = 7.8;
+            isGrounded = false;
+          }
         }
         keys.jump = pressed;
         e.preventDefault();
@@ -909,41 +882,57 @@ export function createFirstPersonController(camera, domElement, scene, callbacks
       velocity.z = THREE.MathUtils.lerp(velocity.z, targetVz, Math.min(1, dt * damping));
     }
 
-    // Proposed next XZ position with smooth shoreline & map-bounds collision
-    const nextX = THREE.MathUtils.clamp(playerPos.x + velocity.x * dt, -165, 165);
-    const nextZ = THREE.MathUtils.clamp(playerPos.z + velocity.z * dt, -155, 155);
+    if (physics) {
+      // Drive real cannon-es rigid-body physics (handles sloped ramps, bridge railings, buildings, mountains & air-walls!)
+      physics.playerBody.velocity.x = velocity.x;
+      physics.playerBody.velocity.z = velocity.z;
+      physics.step(dt);
 
-    const groundNext = getStreetGroundY(nextX, nextZ);
-    if (groundNext !== null) {
-      playerPos.x = nextX;
-      playerPos.z = nextZ;
-    } else {
-      // Slide along X or Z independently when brushing against river/lake edge
-      const gx = getStreetGroundY(nextX, playerPos.z);
-      const gz = getStreetGroundY(playerPos.x, nextZ);
-      if (gx !== null) {
-        playerPos.x = nextX;
-        velocity.z *= -0.15;
-      } else if (gz !== null) {
-        playerPos.z = nextZ;
-        velocity.x *= -0.15;
-      } else {
-        velocity.multiplyScalar(-0.2);
-      }
-    }
+      const bp = physics.playerBody.position;
+      playerPos.set(bp.x, bp.y - physics.playerRadius, bp.z);
+      // Read back resolved velocity after collisions so wall impacts damp cleanly
+      velocity.x = physics.playerBody.velocity.x;
+      velocity.z = physics.playerBody.velocity.z;
+      isGrounded = physics.isGrounded();
 
-    // Vertical gravity & smooth bridge height following
-    const currentGround = getStreetGroundY(playerPos.x, playerPos.z) ?? 0.55;
-    if (!isGrounded) {
-      verticalVel -= 22.0 * dt;
-      playerPos.y += verticalVel * dt;
-      if (playerPos.y <= currentGround) {
-        playerPos.y = currentGround;
-        verticalVel = 0;
+      // Safety clamp: prevent ever falling below terrain if squeezed at an extreme corner
+      if (playerPos.y < 0.45) {
+        playerPos.y = 0.55;
+        physics.playerBody.position.y = 0.55 + physics.playerRadius;
+        physics.playerBody.velocity.y = Math.max(0, physics.playerBody.velocity.y);
         isGrounded = true;
       }
     } else {
-      playerPos.y = THREE.MathUtils.lerp(playerPos.y, currentGround, Math.min(1, dt * 14));
+      // Fallback non-physics movement
+      const nextX = THREE.MathUtils.clamp(playerPos.x + velocity.x * dt, -165, 165);
+      const nextZ = THREE.MathUtils.clamp(playerPos.z + velocity.z * dt, -155, 155);
+      const groundNext = getStreetGroundY(nextX, nextZ);
+      if (groundNext !== null) {
+        playerPos.x = nextX;
+        playerPos.z = nextZ;
+      }
+      const currentGround = getStreetGroundY(playerPos.x, playerPos.z) ?? 0.55;
+      if (!isGrounded) {
+        verticalVel -= 22.0 * dt;
+        playerPos.y += verticalVel * dt;
+        if (playerPos.y <= currentGround) {
+          playerPos.y = currentGround;
+          verticalVel = 0;
+          isGrounded = true;
+        }
+      } else {
+        playerPos.y = THREE.MathUtils.lerp(playerPos.y, currentGround, Math.min(1, dt * 14));
+      }
+    }
+
+    // Smoothly pitch exterior car to match sloped bridge ramps!
+    if (driveMode) {
+      const fY = getBridgeSurfaceY(playerPos.x + forwardDir.x * 1.5, playerPos.z + forwardDir.z * 1.5, 0.5) ?? 0.55;
+      const bY = getBridgeSurfaceY(playerPos.x - forwardDir.x * 1.5, playerPos.z - forwardDir.z * 1.5, 0.5) ?? 0.55;
+      const slopePitch = Math.atan2(fY - bY, 3.0);
+      exteriorCar.car.rotation.x = THREE.MathUtils.lerp(exteriorCar.car.rotation.x, slopePitch, Math.min(1, dt * 12));
+    } else {
+      exteriorCar.car.rotation.x = 0;
     }
 
     // Speed & dynamic GTA FOV + Head-bobbing
