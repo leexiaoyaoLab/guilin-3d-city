@@ -250,7 +250,7 @@ function createTwinPagodas(nightMaterials, pointLights) {
   const group = new THREE.Group();
   group.name = 'SunMoonTwinPagodas';
 
-  // 日塔 (Sun Pagoda - 9 tiers, radiant bronze-gold) at (-11, 25)
+  // 日塔 (Sun Pagoda - East side of Shan Lake) at (+1, 35)
   const sunPagoda = buildOctagonalPagoda({
     tiers: 9,
     baseRadius: 3.15,
@@ -263,7 +263,7 @@ function createTwinPagodas(nightMaterials, pointLights) {
     isGold: true,
     nightMaterials
   });
-  sunPagoda.position.set(-11, -0.2, 25);
+  sunPagoda.position.set(1, -0.2, 35);
   const sunPlaque = createPlaqueBoard(
     '日塔',
     2.1,
@@ -275,7 +275,7 @@ function createTwinPagodas(nightMaterials, pointLights) {
   sunPagoda.add(sunPlaque);
   group.add(sunPagoda);
 
-  // 月塔 (Moon Pagoda - 7 tiers, luminous glazed silver-blue) at (-26, 27)
+  // 月塔 (Moon Pagoda - West side of Shan Lake) at (-13, 37)
   const moonPagoda = buildOctagonalPagoda({
     tiers: 7,
     baseRadius: 2.65,
@@ -288,7 +288,7 @@ function createTwinPagodas(nightMaterials, pointLights) {
     isGold: false,
     nightMaterials
   });
-  moonPagoda.position.set(-26, -0.2, 27);
+  moonPagoda.position.set(-13, -0.2, 37);
   const moonPlaque = createPlaqueBoard(
     '月塔',
     1.85,
@@ -309,7 +309,7 @@ function createTwinPagodas(nightMaterials, pointLights) {
     opacity: 0.65
   });
   nightMaterials.push({ mat: linkMat, baseEmissive: 0.1, nightEmissive: 1.4 });
-  const linkCurve = new THREE.LineCurve3(new THREE.Vector3(-11, 0.05, 25), new THREE.Vector3(-26, 0.05, 27));
+  const linkCurve = new THREE.LineCurve3(new THREE.Vector3(1, 0.05, 35), new THREE.Vector3(-13, 0.05, 37));
   const linkGeo = new THREE.TubeGeometry(linkCurve, 12, 0.75, 6, false);
   linkGeo.scale(1, 0.25, 1);
   const linkMesh = new THREE.Mesh(linkGeo, linkMat);
@@ -317,12 +317,12 @@ function createTwinPagodas(nightMaterials, pointLights) {
 
   // Point lights for dramatic night reflection on Shan Lake
   const sunLight = new THREE.PointLight(0xffb845, 0, 58, 1.5);
-  sunLight.position.set(-11, 13, 25);
+  sunLight.position.set(1, 13, 35);
   group.add(sunLight);
   pointLights.push({ light: sunLight, nightIntensity: 55 });
 
   const moonLight = new THREE.PointLight(0x6bd0ff, 0, 52, 1.5);
-  moonLight.position.set(-26, 11, 27);
+  moonLight.position.set(-13, 11, 37);
   group.add(moonLight);
   pointLights.push({ light: moonLight, nightIntensity: 45 });
 
@@ -339,7 +339,8 @@ function createTwinPagodas(nightMaterials, pointLights) {
 function createJingjiangPalace(nightMaterials) {
   const group = new THREE.Group();
   group.name = 'JingjiangPalace';
-  group.position.set(-32, 0.4, -46);
+  // Real position: Center-North, directly north of Zhengyang St & Shan Lake
+  group.position.set(0, 0.4, -43);
 
   const mats = getMaterialsLibrary();
   const wallMat = new THREE.MeshStandardMaterial({
@@ -575,7 +576,8 @@ function buildTraditionalHall(width, depth, height, wallMat, roofMat, lanternMat
 function createAncientSouthGate(nightMaterials) {
   const group = new THREE.Group();
   group.name = 'AncientSouthGate';
-  group.position.set(-78, 0.3, 4.2);
+  // Real position: North shore of Rong Lake, northwest of Yangqiao Bridge
+  group.position.set(-54, 0.3, 8.2);
 
   const mats = getMaterialsLibrary();
   const brickMat = new THREE.MeshStandardMaterial({
@@ -725,9 +727,9 @@ function createAncientSouthGate(nightMaterials) {
   }
   group.add(banyan);
 
-  // Scenic pavilion on Rong Lake Central Island (-76, 28) -> relative (+2, +23.8)
+  // Scenic pavilion on Rong Lake Central Island (-66, 29) -> relative (-12, +20.8)
   const islandPav = buildTraditionalHall(4.6, 4.6, 2.4, timberMat, roofMat, lanternMat);
-  islandPav.position.set(2.0, 0.2, 23.8);
+  islandPav.position.set(-12.0, 0.2, 20.8);
   group.add(islandPav);
 
   group.traverse((c) => {
@@ -774,20 +776,21 @@ function createHistoricQuarter(nightMaterials) {
   });
   nightMaterials.push({ mat: lanternMat, baseEmissive: 0.1, nightEmissive: 2.4 });
 
-  // Cluster A: 东西巷 (East of Jingjiang Palace, x in [-9, +10], z in [-52, -31])
+  // Real Guilin layout:
+  // Cluster A: 东西巷 (East-West Alley) — Immediately east of Zhengyang St & south-east of Jingjiang Palace, west of Jiefang Bridge!
+  // Cluster B: 正阳步行街 (Zhengyang Pedestrian Street) — Runs North-South from Jingjiang Palace south gate down to Shan Lake North Rd!
   const alleyPlots = [
-    [-6, -48, 6.2, 4.6, 3.2],
-    [2.5, -48, 6.6, 4.8, 3.6],
-    [-6, -39, 6.4, 4.5, 3.4],
-    [2.5, -39, 6.8, 5.2, 3.8],
-    [9.5, -43, 4.8, 7.5, 3.1],
-    // Cluster B: 正阳步行街 (South of Jiefang Rd, x in [-12, +10], z in [-18, -3])
-    [-9, -15, 5.8, 4.8, 3.8],
-    [-1, -15, 6.2, 4.8, 4.2],
-    [7, -15, 5.6, 5.0, 3.5],
-    [-9, -7, 6.0, 4.8, 3.4],
-    [-1, -7, 6.5, 4.6, 3.9],
-    [7, -7, 5.6, 4.8, 3.2]
+    // East-West Alley (东西巷, x in [+12..+22], z in [-28..-20] and [-6..+6])
+    [14.5, -24, 5.8, 4.4, 3.3],
+    [21.5, -24, 5.6, 4.6, 3.6],
+    [14.5, -4, 5.8, 4.6, 3.5],
+    [21.5, -4, 5.6, 4.8, 3.8],
+    [15.0, 4.5, 6.0, 4.5, 3.3],
+    // Zhengyang Pedestrian Street (正阳步行街, flanking x = +4, z in [-6..+8])
+    [-2.5, -4, 5.4, 4.6, 3.7],
+    [-2.5, 4.5, 5.6, 4.6, 3.5],
+    [8.2, -4, 4.8, 4.6, 3.9],
+    [8.2, 4.5, 4.8, 4.6, 3.4]
   ];
 
   alleyPlots.forEach(([x, z, w, d, h], idx) => {
@@ -803,24 +806,24 @@ function createHistoricQuarter(nightMaterials) {
     group.add(hall);
   });
 
-  // Hanging street lanterns along East-West Alley & Zhengyang Pedestrian Street
+  // Hanging street lanterns along Zhengyang St & East-West Alley
   const lanternGeo = new THREE.SphereGeometry(0.28, 7, 7);
-  for (let z = -50; z <= -6; z += 4.5) {
-    if (Math.abs(z - (-25)) < 6) continue;
-    for (const x of [-4.5, 3.2]) {
+  for (let z = -22; z <= 9; z += 4.5) {
+    if (Math.abs(z - (-14)) < 5.5) continue;
+    for (const x of [1.6, 5.2, 17.8]) {
       const l = new THREE.Mesh(lanternGeo, lanternMat);
       l.position.set(x, 3.3, z);
       group.add(l);
     }
   }
 
-  // Iconic Paifang Archways at East-West Alley (東西巷) & Zhengyang Pedestrian Street (正陽步行街)!
+  // Iconic Paifang Archways at East-West Alley (東西巷, facing Jiefang Rd) & Zhengyang Pedestrian Street (正陽步行街, facing Shan Lake)!
   const eastWestArch = createPaifangArchway('東西巷', nightMaterials);
-  eastWestArch.position.set(-1.5, 0.4, -30.5);
+  eastWestArch.position.set(17.8, 0.4, -8.8);
   group.add(eastWestArch);
 
   const zhengyangArch = createPaifangArchway('正陽步行街', nightMaterials);
-  zhengyangArch.position.set(-1.5, 0.4, -20.0);
+  zhengyangArch.position.set(3.2, 0.4, 9.6);
   group.add(zhengyangArch);
 
   return group;
@@ -838,29 +841,28 @@ export function createLandmarks(scene, physics = null) {
   group.add(createAncientSouthGate(nightMaterials));
   group.add(createHistoricQuarter(nightMaterials));
 
-  // Register solid physics colliders for palace walls, gates, and historic buildings
+  // Register solid physics colliders matching real-world positions
   if (physics) {
-    // Jingjiang Palace enclosure walls & halls (-32, -46)
-    physics.addBoxCollider(-32, 2.5, -64, 38, 5, 1.4); // North wall
-    physics.addBoxCollider(-51, 2.5, -46, 1.4, 5, 36); // West wall
-    physics.addBoxCollider(-13, 2.5, -46, 1.4, 5, 36); // East wall
-    physics.addBoxCollider(-44.5, 2.5, -28, 13, 5, 1.4); // South-west wall
-    physics.addBoxCollider(-19.5, 2.5, -28, 13, 5, 1.4); // South-east wall
-    physics.addBoxCollider(-32, 3.0, -28, 11.5, 6, 4.2); // Chengyun Gate
-    physics.addBoxCollider(-32, 2.5, -36.5, 13, 5, 6.2); // Main hall
-    physics.addBoxCollider(-44.5, 2.0, -42, 4.2, 4, 11); // West wing
-    physics.addBoxCollider(-19.5, 2.0, -42, 4.2, 4, 11); // East wing
+    // Jingjiang Palace enclosure walls & halls (0, -43)
+    physics.addBoxCollider(0, 2.5, -61, 38, 5, 1.4); // North wall
+    physics.addBoxCollider(-19, 2.5, -43, 1.4, 5, 36); // West wall
+    physics.addBoxCollider(19, 2.5, -43, 1.4, 5, 36); // East wall
+    physics.addBoxCollider(-12.5, 2.5, -25, 13, 5, 1.4); // South-west wall
+    physics.addBoxCollider(12.5, 2.5, -25, 13, 5, 1.4); // South-east wall
+    physics.addBoxCollider(0, 3.0, -25, 12.2, 6, 4.4); // Chengyun Gate
+    physics.addBoxCollider(0, 2.5, -33.5, 13, 5, 6.2); // Main hall
+    physics.addBoxCollider(-12.5, 2.0, -39, 4.2, 4, 11); // West wing
+    physics.addBoxCollider(12.5, 2.0, -39, 4.2, 4, 11); // East wing
 
-    // Ancient South Gate (-78, 4.2) & Banyan Tree
-    physics.addBoxCollider(-78, 2.5, 4.2, 11, 5, 4.8);
-    physics.addCylinderCollider(-69.4, 5.4, 2.0, 6);
+    // Ancient South Gate (-54, 8.2) & Banyan Tree
+    physics.addBoxCollider(-54, 2.5, 8.2, 12.2, 5, 5.2);
+    physics.addCylinderCollider(-45.4, 9.4, 2.0, 6);
 
     // East-West Alley & Zhengyang Pedestrian Street buildings
     const alleyBoxes = [
-      [-6, -48, 6.2, 4.6], [2.5, -48, 6.6, 4.8], [-6, -39, 6.4, 4.5],
-      [2.5, -39, 6.8, 5.2], [9.5, -43, 4.8, 7.5],
-      [-9, -15, 5.8, 4.8], [-1, -15, 6.2, 4.8], [7, -15, 5.6, 5.0],
-      [-9, -7, 6.0, 4.8], [-1, -7, 6.5, 4.6], [7, -7, 5.6, 4.8]
+      [14.5, -24, 5.8, 4.4], [21.5, -24, 5.6, 4.6],
+      [14.5, -4, 5.8, 4.6], [21.5, -4, 5.6, 4.8], [15.0, 4.5, 6.0, 4.5],
+      [-2.5, -4, 5.4, 4.6], [-2.5, 4.5, 5.6, 4.6], [8.2, -4, 4.8, 4.6], [8.2, 4.5, 4.8, 4.6]
     ];
     for (const [bx, bz, bw, bd] of alleyBoxes) {
       physics.addBoxCollider(bx, 3.0, bz, bw, 6, bd);

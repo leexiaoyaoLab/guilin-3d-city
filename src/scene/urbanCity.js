@@ -105,20 +105,20 @@ function createBuildingTextures(styleIndex) {
  */
 function isProtectedZone(x, z) {
   const exclusionZones = [
-    [27, 77, 25],     // Elephant Trunk Hill
-    [-32, -46, 26],   // Solitary Beauty Peak & Jingjiang Palace
-    [18, -68, 18],    // Fubo Hill
-    [10, -115, 24],   // Diecai Hill
-    [-16, 26, 30],    // Shan Lake
-    [-78, 25, 36],    // Rong Lake & Ancient South Gate
-    [-78, 4, 14],     // Ancient South Gate square
-    [0, -42, 16],     // East-West Alley
-    [-1, -11, 14],    // Zhengyang Pedestrian Street
-    [118, -32, 24],   // Seven Star Park Peak 1
-    [134, -18, 25],   // Seven Star Park Peak 2
-    [118, 10, 22],    // Seven Star Park Peak 3
-    [116, 98, 24],    // Chuanshan
-    [95, 108, 16]     // Tashan
+    [17, 76, 25],     // Elephant Trunk Hill
+    [0, -43, 27],     // Solitary Beauty Peak & Jingjiang Palace
+    [26, -78, 18],    // Fubo Hill
+    [20, -122, 24],   // Diecai Hill
+    [-6, 36, 28],     // Shan Lake
+    [-64, 27, 33],    // Rong Lake
+    [-54, 8, 14],     // Ancient South Gate square
+    [17, -10, 16],    // East-West Alley
+    [3, 0, 14],       // Zhengyang Pedestrian Street
+    [106, -24, 24],   // Seven Star Park Peak 1
+    [128, -4, 25],    // Seven Star Park Peak 2
+    [112, 18, 22],    // Seven Star Park Peak 3
+    [106, 96, 24],    // Chuanshan
+    [85, 106, 16]     // Tashan
   ];
 
   for (const [ex, ez, er] of exclusionZones) {
@@ -181,32 +181,32 @@ function createRoadNetwork(nightGlowMats) {
   }
 
   // Main urban avenues
-  // 1. 中山中路 (Zhongshan Central Rd) - North-South x = -45, meeting Yangqiao & Peach Bridge ramps cleanly
+  // 1. 中山中路 (Zhongshan Central Rd) - North-South x = -32, meeting Yangqiao & Peach Bridge ramps cleanly
   const yangqiao = BRIDGES.find((b) => b.id === 'yangqiao-bridge');
   const peachB = BRIDGES.find((b) => b.id === 'peach-bridge');
   const yqHalf = yangqiao.spanLength / 2 + yangqiao.rampLength;
   const pbHalf = peachB.spanLength / 2 + peachB.rampLength;
-  addStraightRoad(-45, -130, -45, yangqiao.cz - yqHalf, 7.6);
-  addStraightRoad(-45, yangqiao.cz + yqHalf, -45, peachB.cz - pbHalf, 7.6);
-  addStraightRoad(-45, peachB.cz + pbHalf, -45, 132, 7.6);
+  addStraightRoad(-32, -130, -32, yangqiao.cz - yqHalf, 7.6);
+  addStraightRoad(-32, yangqiao.cz + yqHalf, -32, peachB.cz - pbHalf, 7.6);
+  addStraightRoad(-32, peachB.cz + pbHalf, -32, 132, 7.6);
 
-  // 2. 解放路 (Jiefang Rd) - East-West z = -25, meeting Jiefang Bridge approach ramp toes cleanly
+  // 2. 解放路 (Jiefang Rd) - East-West z = -14, meeting Jiefang Bridge approach ramp toes cleanly
   const jiefang = BRIDGES.find((b) => b.id === 'jiefang-bridge');
   const jfHalf = jiefang.spanLength / 2 + jiefang.rampLength;
-  addStraightRoad(-138, -25, jiefang.cx - jfHalf, -25, 8.2);
-  addStraightRoad(jiefang.cx + jfHalf, -25, 132, -25, 8.2);
+  addStraightRoad(-138, -14, jiefang.cx - jfHalf, -14, 8.2);
+  addStraightRoad(jiefang.cx + jfHalf, -14, 132, -14, 8.2);
 
-  // 3. 杉湖/榕湖北路 (Lakeside North Ave) z = 1.5
-  addStraightRoad(-126, 1.5, 22, 1.5, 5.8);
+  // 3. 杉湖/榕湖北路 (Lakeside North Ave) z = 14
+  addStraightRoad(-122, 14, 24, 14, 5.8);
 
-  // 4. 南环路 (South City Ave) z = 54
-  addStraightRoad(-130, 54, 18, 54, 5.8);
+  // 4. 文明路 / 南环路 (South City Ave) z = 58
+  addStraightRoad(-126, 58, 16, 58, 5.8);
 
-  // 5. 西城路 (West Ring Rd) x = -115
-  addStraightRoad(-115, -112, -115, 102, 6.2);
+  // 5. 西城路 (West Ring Rd) x = -108
+  addStraightRoad(-108, -112, -108, 102, 6.2);
 
-  // 6. 凤北路 (North Ave) z = -76
-  addStraightRoad(-115, -76, 14, -76, 5.8);
+  // 6. 凤北路 (North Ave) z = -72
+  addStraightRoad(-112, -72, 20, -72, 5.8);
 
   // 7. 滨江路 (Binjiang Scenic Waterfront Rd) following Li River West Bank
   const binjiangPts = [];
@@ -240,14 +240,14 @@ function createRoadNetwork(nightGlowMats) {
   // Instanced Streetlights along main avenues
   const lampPositions = [];
   for (let z = -115; z <= 100; z += 16) {
-    if (!isWaterOrShore(-40.5, z, 2)) lampPositions.push([-40.5, z]);
-    if (!isWaterOrShore(-49.5, z, 2)) lampPositions.push([-49.5, z]);
+    if (!isWaterOrShore(-27.5, z, 2)) lampPositions.push([-27.5, z]);
+    if (!isWaterOrShore(-36.5, z, 2)) lampPositions.push([-36.5, z]);
     const bx = getLiRiverCenterX(z) - getLiRiverHalfWidth(z) - 3.6;
     if (!isWaterOrShore(bx, z, 1.5)) lampPositions.push([bx, z]);
   }
   for (let x = -125; x <= 115; x += 16) {
-    if (!isWaterOrShore(x, -20.5, 2.5)) lampPositions.push([x, -20.5]);
-    if (!isWaterOrShore(x, -29.5, 2.5)) lampPositions.push([x, -29.5]);
+    if (!isWaterOrShore(x, -9.5, 2.5)) lampPositions.push([x, -9.5]);
+    if (!isWaterOrShore(x, -18.5, 2.5)) lampPositions.push([x, -18.5]);
   }
 
   const poleInst = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.09, 0.12, 3.2, 5), poleMat, lampPositions.length);

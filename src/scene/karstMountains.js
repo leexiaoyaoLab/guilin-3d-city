@@ -127,8 +127,8 @@ function createKarstPeakMesh(radiusX, radiusZ, height, seed, options = {}) {
 function createElephantTrunkHill(nightGlowMats) {
   const group = new THREE.Group();
   group.name = 'ElephantTrunkHill';
-  group.position.set(27, -0.4, 77);
-  group.rotation.y = 0.25; // Facing east-southeast into the Li River
+  group.position.set(17, -0.4, 76);
+  group.rotation.y = 0.22; // Facing east-southeast into the Li River confluence
 
   const mats = getMaterialsLibrary();
   const rockMat = new THREE.MeshStandardMaterial({
@@ -309,6 +309,7 @@ export function createKarstMountains(scene, physics = null) {
   const nightGlowMats = [];
 
   // 1. 象鼻山 (Elephant Trunk Hill) + Carved Waterfront Stone Stele (象鼻山)
+  // Real position: South of Shan Lake, at Li River & Peach Blossom River confluence
   const elephantHill = createElephantTrunkHill(nightGlowMats);
   group.add(elephantHill);
 
@@ -321,23 +322,23 @@ export function createKarstMountains(scene, physics = null) {
     new THREE.BoxGeometry(4.2, 2.1, 0.7),
     [rockBaseMat(0x9a968b), rockBaseMat(0x9a968b), rockBaseMat(0x9a968b), rockBaseMat(0x9a968b), elephantSteleMat, elephantSteleMat]
   );
-  elephantStele.position.set(17.5, 1.5, 81.5);
-  elephantStele.rotation.y = -0.45;
+  elephantStele.position.set(7.5, 1.5, 80.5);
+  elephantStele.rotation.y = -0.42;
   elephantStele.castShadow = true;
   elephantStele.userData.landmarkId = 'elephant-hill';
   group.add(elephantStele);
 
   if (physics) {
-    physics.addCylinderCollider(23, 77, 12.5, 24);
-    physics.addCylinderCollider(31, 77.5, 8.0, 20);
+    physics.addCylinderCollider(13, 76, 12.5, 24);
+    physics.addCylinderCollider(21, 76.5, 8.0, 20);
   }
 
-  // 2. 独秀峰 (Solitary Beauty Peak) - Sheer vertical peak inside Jingjiang Palace (-32, -48)
+  // 2. 独秀峰 (Solitary Beauty Peak) - Directly north of Zhengyang St & Shan Lake, inside Jingjiang Palace (0, -45)
   const duxiuPeak = createKarstPeakMesh(11.5, 10.5, 34, 303, {
     domePow: 0.34,
     cliffThreshold: 0.44
   });
-  duxiuPeak.position.set(-32, 0, -48);
+  duxiuPeak.position.set(0, 0, -45);
   duxiuPeak.userData.landmarkId = 'jingjiang-palace';
   group.add(duxiuPeak);
 
@@ -351,55 +352,55 @@ export function createKarstMountains(scene, physics = null) {
     new THREE.BoxGeometry(2.8, 7.6, 0.55),
     [rockBaseMat(0x8c8a82), rockBaseMat(0x8c8a82), rockBaseMat(0x8c8a82), rockBaseMat(0x8c8a82), cliffInscriptionMat, rockBaseMat(0x8c8a82)]
   );
-  cliffTablet.position.set(-32, 14.5, -36.8);
+  cliffTablet.position.set(0, 14.5, -33.8);
   cliffTablet.userData.landmarkId = 'jingjiang-palace';
   group.add(cliffTablet);
 
-  if (physics) physics.addCylinderCollider(-32, -48, 10.5, 34);
+  if (physics) physics.addCylinderCollider(0, -45, 10.5, 34);
 
   // Small summit pavilion on Solitary Beauty Peak (独秀亭)
   const duxiuPav = createSummitPavilion(nightGlowMats);
-  duxiuPav.position.set(-32, 33.4, -48);
+  duxiuPav.position.set(0, 33.4, -45);
   duxiuPav.scale.setScalar(0.75);
   duxiuPav.traverse((c) => (c.userData.landmarkId = 'jingjiang-palace'));
   group.add(duxiuPav);
 
-  // 3. 伏波山 (Fubo Hill) - Dramatic cliffside karst peak right on Li River west bank
+  // 3. 伏波山 (Fubo Hill) - Northeast of Jingjiang Palace, right on Li River west bank
   const fubo = createKarstPeakMesh(12.5, 10.8, 30, 404, {
     domePow: 0.4,
     cliffThreshold: 0.48
   });
-  fubo.position.set(18, 0, -68);
+  fubo.position.set(26, 0, -78);
   fubo.userData.landmarkId = 'fubo-diecai';
   group.add(fubo);
-  if (physics) physics.addCylinderCollider(18, -68, 11.2, 30);
+  if (physics) physics.addCylinderCollider(26, -78, 11.2, 30);
 
-  // 4. 叠彩山 (Diecai Hill) - Multi-peak terraced landmark north of Fubo Hill
+  // 4. 叠彩山 (Diecai Hill) - Further north of Fubo Hill along Li River west bank
   const diecaiGroup = new THREE.Group();
   const dcMain = createKarstPeakMesh(15.5, 13.0, 39, 505, { domePow: 0.44, cliffThreshold: 0.5 });
-  dcMain.position.set(12, 0, -116);
+  dcMain.position.set(22, 0, -124);
   diecaiGroup.add(dcMain);
-  if (physics) physics.addCylinderCollider(12, -116, 13.8, 39);
+  if (physics) physics.addCylinderCollider(22, -124, 13.8, 39);
 
   const dcSub = createKarstPeakMesh(10.5, 9.5, 27, 506, { domePow: 0.46 });
-  dcSub.position.set(-3, 0, -110);
+  dcSub.position.set(7, 0, -118);
   diecaiGroup.add(dcSub);
-  if (physics) physics.addCylinderCollider(-3, -110, 9.6, 27);
+  if (physics) physics.addCylinderCollider(7, -118, 9.6, 27);
 
   const nayunPav = createSummitPavilion(nightGlowMats);
-  nayunPav.position.set(12, 38.2, -116);
+  nayunPav.position.set(22, 38.2, -124);
   diecaiGroup.add(nayunPav);
 
   diecaiGroup.traverse((c) => (c.userData.landmarkId = 'fubo-diecai'));
   group.add(diecaiGroup);
 
-  // 5. 七星公园峰群 (Seven Star Park Peaks on East Bank of Li River)
+  // 5. 七星公园峰群 (Seven Star Park Peaks on East Bank directly across Jiefang Bridge)
   const sevenStarCoords = [
-    [112, -38, 16, 13, 35, 601],
-    [134, -18, 19, 15, 42, 602],
-    [118, 6, 14, 12, 29, 603],
-    [142, 24, 17, 14, 38, 604],
-    [104, 32, 11, 10, 24, 605]
+    [106, -24, 16, 13, 35, 601],
+    [128, -4, 19, 15, 42, 602],
+    [112, 18, 14, 12, 29, 603],
+    [136, 36, 17, 14, 38, 604],
+    [98, 42, 11, 10, 24, 605]
   ];
   for (const [x, z, rx, rz, h, seed] of sevenStarCoords) {
     const pk = createKarstPeakMesh(rx, rz, h, seed, { domePow: 0.45 });
@@ -408,20 +409,20 @@ export function createKarstMountains(scene, physics = null) {
     if (physics) physics.addCylinderCollider(x, z, (rx + rz) * 0.46, h);
   }
 
-  // 6. 穿山 & 塔山 (Chuanshan & Pagoda Hill in Southeast)
+  // 6. 穿山 & 塔山 (Chuanshan & Pagoda Hill in Southeast across Li River from Elephant Hill)
   const chuanshan = createKarstPeakMesh(17, 13, 38, 701, { domePow: 0.42, cliffThreshold: 0.5 });
-  chuanshan.position.set(116, 0, 98);
+  chuanshan.position.set(106, 0, 96);
   group.add(chuanshan);
-  if (physics) physics.addCylinderCollider(116, 98, 14.5, 38);
+  if (physics) physics.addCylinderCollider(106, 96, 14.5, 38);
 
   const tashan = createKarstPeakMesh(11, 10, 29, 702, { domePow: 0.38 });
-  tashan.position.set(95, 0, 108);
+  tashan.position.set(85, 0, 106);
   group.add(tashan);
-  if (physics) physics.addCylinderCollider(95, 108, 10.0, 29);
+  if (physics) physics.addCylinderCollider(85, 106, 10.0, 29);
 
   // Summit Shoushan Pagoda on Tashan
   const tashanPagoda = createSummitPavilion(nightGlowMats);
-  tashanPagoda.position.set(95, 28.5, 108);
+  tashanPagoda.position.set(85, 28.5, 106);
   tashanPagoda.scale.setScalar(0.85);
   group.add(tashanPagoda);
 

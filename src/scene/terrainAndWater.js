@@ -217,24 +217,24 @@ export function createTerrainAndWater(scene) {
 
         // Night reflections under Sun & Moon Pagodas (Shan Lake) and Jiefang Bridge
         if (uNightFactor > 0.05) {
-          // Golden Sun Pagoda reflection around (-11, 25)
-          float dSun = length(vWorldPos.xz - vec2(-11.0, 25.0));
+          // Golden Sun Pagoda reflection around (1, 35)
+          float dSun = length(vWorldPos.xz - vec2(1.0, 35.0));
           float sunGlow = exp(-dSun * 0.11) * (0.65 + 0.35 * sin(vWorldPos.z * 1.8 + uTime * 3.0));
           color += vec3(1.0, 0.72, 0.22) * sunGlow * uNightFactor * 1.15;
 
-          // Silver-blue Moon Pagoda reflection around (-26, 27)
-          float dMoon = length(vWorldPos.xz - vec2(-26.0, 27.0));
+          // Silver-blue Moon Pagoda reflection around (-13, 37)
+          float dMoon = length(vWorldPos.xz - vec2(-13.0, 37.0));
           float moonGlow = exp(-dMoon * 0.12) * (0.65 + 0.35 * cos(vWorldPos.z * 2.0 - uTime * 2.6));
           color += vec3(0.45, 0.82, 1.0) * moonGlow * uNightFactor * 1.05;
 
-          // Jiefang Bridge warm reflection along z = -25, x in [18, 70]
-          float dBridgeZ = abs(vWorldPos.z - (-25.0));
-          float inBridgeX = smoothstep(14.0, 24.0, vWorldPos.x) * (1.0 - smoothstep(64.0, 76.0, vWorldPos.x));
+          // Jiefang Bridge warm reflection along z = -14, x in [18, 76]
+          float dBridgeZ = abs(vWorldPos.z - (-14.0));
+          float inBridgeX = smoothstep(14.0, 24.0, vWorldPos.x) * (1.0 - smoothstep(68.0, 78.0, vWorldPos.x));
           float bridgeGlow = exp(-dBridgeZ * 0.2) * inBridgeX * (0.7 + 0.3 * ripple);
           color += vec3(1.0, 0.78, 0.35) * bridgeGlow * uNightFactor * 0.75;
 
-          // Elephant Trunk Hill Water Moon Cave moonlight shimmer around (34, 77)
-          float dEleph = length(vWorldPos.xz - vec2(34.0, 77.0));
+          // Elephant Trunk Hill Water Moon Cave moonlight shimmer around (24, 76)
+          float dEleph = length(vWorldPos.xz - vec2(24.0, 76.0));
           color += vec3(0.85, 0.9, 1.0) * exp(-dEleph * 0.12) * uNightFactor * 0.55;
         }
 
@@ -272,7 +272,7 @@ export function createTerrainAndWater(scene) {
   }
 
   // Ronghu Crystal Arch Bridge (榕湖玻璃桥) spanning Rong Lake to island
-  const crystalBridge = createCrystalBridge(-88, 25, 22, bridgeLights);
+  const crystalBridge = createCrystalBridge(-74, 27, 22, bridgeLights);
   crystalBridge.userData = { landmarkId: 'ronghu-gate' };
   bridgesGroup.add(crystalBridge);
 
@@ -573,8 +573,8 @@ function createLakesidePromenade() {
 
   for (let i = 0; i < count; i++) {
     const a = (i / count) * Math.PI * 2;
-    const x = -16 + Math.cos(a) * 26.8;
-    const z = 26 + Math.sin(a) * 18.8;
+    const x = -6 + Math.cos(a) * 23.8;
+    const z = 36 + Math.sin(a) * 16.8;
     if (getWaterDepth(x, z) > 0.05) continue;
     dummy.position.set(x, 0.65, z);
     dummy.rotation.set(0, -a, 0);
