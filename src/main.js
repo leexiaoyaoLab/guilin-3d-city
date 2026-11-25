@@ -7,6 +7,7 @@ import { createLandmarks } from './scene/landmarks.js';
 import { createUrbanCity } from './scene/urbanCity.js';
 import { createAtmosphere } from './scene/atmosphere.js';
 import { createSimulation } from './scene/simulation.js';
+import { createFirstPersonController, ROAM_SPAWNS } from './scene/firstPersonMode.js';
 
 // =========================================================
 // 1. RENDERER, SCENE, CAMERA & CONTROLS
@@ -44,6 +45,35 @@ const karstSystem = createKarstMountains(scene);
 const landmarkSystem = createLandmarks(scene);
 const urbanSystem = createUrbanCity(scene);
 const simSystem = createSimulation(scene);
+
+// Saved Orbit camera state when entering First-Person Roaming Mode
+let savedOrbitPos = new THREE.Vector3(-95, 92, 138);
+let savedOrbitTarget = new THREE.Vector3(-5, 8, 12);
+
+const roamHudEl = document.getElementById('roam-hud');
+const firstPerson = createFirstPersonController(camera, renderer.domElement, scene, {
+  onEnter: () => {
+    savedOrbitPos.copy(camera.position);
+    savedOrbitTarget.copy(controls.target);
+    camFlight = null;
+    controls.enabled = false;
+    buildCursor.visible = false;
+    closeLandmarkCard();
+    hudElements.forEach((el) => el.classList.add('hidden'));
+    restoreHudBtn.classList.add('hidden');
+    roamHudEl.classList.remove('hidden');
+    renderer.domElement.style.cursor = 'crosshair';
+  },
+  onExit: () => {
+    roamHudEl.classList.add('hidden');
+    hudElements.forEach((el) => el.classList.remove('hidden'));
+    camera.position.copy(savedOrbitPos);
+    controls.target.copy(savedOrbitTarget);
+    controls.enabled = true;
+    controls.update();
+    renderer.domElement.style.cursor = state.buildMode === 'inspect' ? 'grab' : 'crosshair';
+  }
+});
 
 // =========================================================
 // 3. INTERACTIVE STATE
@@ -120,7 +150,7 @@ renderer.domElement.addEventListener('pointerdown', (e) => {
 });
 
 renderer.domElement.addEventListener('pointermove', (e) => {
-  if (state.buildMode === 'inspect') {
+  if (firstPerson.isActive() || state.buildMode === 'inspect') {
     buildCursor.visible = false;
     return;
   }
@@ -141,6 +171,7 @@ renderer.domElement.addEventListener('pointermove', (e) => {
 });
 
 renderer.domElement.addEventListener('pointerup', (e) => {
+  if (firstPerson.isActive()) return;
   const dragDist = Math.hypot(e.clientX - pointerDownPos.x, e.clientY - pointerDownPos.y);
   if (dragDist > 6) return; // Ignore camera orbit drags
 
@@ -354,6 +385,13 @@ restoreHudBtn.addEventListener('click', () => toggleHud(true));
 
 // Keyboard shortcuts
 window.addEventListener('keydown', (e) => {
+  if (e.key === 'f' || e.key === 'F') {
+    if (firstPerson.isActive()) firstPerson.exit();
+    else firstPerson.enter('jiefang-bridge');
+    return;
+  }
+  if (firstPerson.isActive()) return;
+
   if (e.key === 'h' || e.key === 'H') {
     toggleHud();
   } else if (e.key === ' ') {
@@ -363,6 +401,50 @@ window.addEventListener('keydown', (e) => {
     const lm = LANDMARKS[parseInt(e.key, 10) - 1];
     if (lm) flyToLandmark(lm, true);
   }
+});
+
+// Immersive First-Person Roaming UI bindings
+document.getElementById('btn-enter-roam').addEventListener('click', () => {
+  firstPerson.enter('jiefang-bridge');
+});
+document.getElementById('btn-exit-roam').addEventListener('click', () => {
+  firstPerson.exit();
+});
+document.getElementById('btn-roam-drive').addEventListener('click', () => {
+  firstPerson.setDriveMode(!firstPerson.isDriveMode());
+});
+
+const roamTimeBtns = document.querySelectorAll('[data-roam-time]');
+function syncRoamTimeButtons() {
+  roamTimeBtns.forEach((b) => {
+    const val = parseFloat(b.dataset.roamTime);
+    b.classList.toggle('active', Math.abs(state.timeOfDay - val) < 1.5);
+  });
+}
+
+roamTimeBtns.forEach((btn) => {
+  btn.addEventListener('click', () => {
+    state.timeOfDay = parseFloat(btn.dataset.roamTime);
+    sliderTime.value = state.timeOfDay;
+    state.autoTime = false;
+    chkAutoTime.checked = false;
+    syncTimeButtons();
+    syncRoamTimeButtons();
+  });
+});
+syncRoamTimeButtons();
+
+const tpBarEl = document.getElementById('roam-teleport-bar');
+ROAM_SPAWNS.forEach((sp, i) => {
+  const btn = document.createElement('button');
+  btn.className = 'roam-tp-btn' + (sp.id === 'jiefang-bridge' ? ' active' : '');
+  btn.textContent = `${i + 1}. ${sp.name}`;
+  btn.addEventListener('click', () => {
+    firstPerson.teleportTo(sp);
+    tpBarEl.querySelectorAll('.roam-tp-btn').forEach((b) => b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+  tpBarEl.appendChild(btn);
 });
 
 // Telemetry updater
@@ -468,7 +550,11 @@ function animate() {
     fpsTimer = 0;
   }
 
-  controls.update();
+  if (firstPerson.isActive()) {
+    firstPerson.update(dt, nightFactor);
+  } else {
+    controls.update();
+  }
   renderer.render(scene, camera);
 }
 
@@ -482,6 +568,7 @@ window.addEventListener('resize', () => {
 // Expose a clean debug hook for quick verification
 window.__GUILIN_SIM__ = {
   state,
+  firstPerson,
   flyToLandmarkById: (id) => {
     const lm = LANDMARKS.find((l) => l.id === id);
     if (lm) flyToLandmark(lm, true);

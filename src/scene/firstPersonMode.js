@@ -1,0 +1,728 @@
+import * as THREE from 'three';
+import {
+  getLiRiverCenterX,
+  getLiRiverHalfWidth,
+  getPeachRiverCenterZ,
+  getWaterDepth
+} from '../data/landmarksData.js';
+
+/**
+ * Iconic street-level spawn points for GTA-style First-Person Roaming in Guilin
+ */
+export const ROAM_SPAWNS = [
+  {
+    id: 'binjiang',
+    name: '滨江路 · 象鼻山',
+    pos: [12, 0.55, 76],
+    yaw: -Math.PI * 0.48,
+    pitch: 0.06
+  },
+  {
+    id: 'jiefang-bridge',
+    name: '解放桥 · 跨漓江',
+    pos: [24, 3.95, -23.5],
+    yaw: -Math.PI * 0.5,
+    pitch: 0.03
+  },
+  {
+    id: 'shan-lake',
+    name: '杉湖 · 日月双塔',
+    pos: [-16, 0.55, 46.5],
+    yaw: 0,
+    pitch: 0.09
+  },
+  {
+    id: 'east-west-alley',
+    name: '东西巷 · 古街灯火',
+    pos: [-1.5, 0.55, -31],
+    yaw: 0,
+    pitch: 0.04
+  },
+  {
+    id: 'jingjiang-gate',
+    name: '靖江王府 · 承运门',
+    pos: [-32, 0.55, -18],
+    yaw: 0,
+    pitch: 0.14
+  },
+  {
+    id: 'ronghu-gate',
+    name: '榕湖 · 古南门',
+    pos: [-78, 0.55, -3.5],
+    yaw: Math.PI,
+    pitch: 0.03
+  }
+];
+
+/**
+ * Computes walkable/drivable ground elevation including bridges over rivers & lakes
+ */
+export function getStreetGroundY(x, z) {
+  // 1. 解放桥 (Jiefang Bridge) across Li River at z = -25
+  const liBridgeX = getLiRiverCenterX(-25);
+  const liBridgeHalfW = getLiRiverHalfWidth(-25) + 9;
+  if (Math.abs(z - (-25)) < 5.0 && Math.abs(x - liBridgeX) <= liBridgeHalfW) {
+    const edgeDist = liBridgeHalfW - Math.abs(x - liBridgeX);
+    const ramp = Math.min(1, edgeDist / 7.5);
+    return 0.55 + ramp * 3.35;
+  }
+
+  // 2. 阳桥 (Yangqiao Bridge) on Zhongshan Rd between Shan Lake & Rong Lake (x = -45, z = 25.5)
+  if (Math.abs(x - (-45)) < 4.5 && Math.abs(z - 25.5) <= 9.5) {
+    const edgeDist = 9.5 - Math.abs(z - 25.5);
+    const ramp = Math.min(1, edgeDist / 3.0);
+    return 0.55 + ramp * 1.9;
+  }
+
+  // 3. 滨江人行拱桥 (Binjiang Canal Bridge) at x = 14, z = 26
+  if (Math.abs(x - 14) < 3.4 && Math.abs(z - 26) <= 7.5) {
+    const edgeDist = 7.5 - Math.abs(z - 26);
+    const ramp = Math.min(1, edgeDist / 2.5);
+    return 0.55 + ramp * 1.85;
+  }
+
+  // 4. 桃花江大桥 (Peach Blossom River Bridge) on Zhongshan Rd (x = -45)
+  const peachZ = getPeachRiverCenterZ(-45);
+  if (Math.abs(x - (-45)) < 4.6 && Math.abs(z - peachZ) <= 14.5) {
+    const edgeDist = 14.5 - Math.abs(z - peachZ);
+    const ramp = Math.min(1, edgeDist / 3.5);
+    return 0.55 + ramp * 1.9;
+  }
+
+  // 5. 榕湖玻璃桥 (Ronghu Crystal Bridge) around (-88, 25)
+  if (Math.hypot(x - (-88), z - 25) < 11.5) {
+    const dist = Math.hypot(x - (-88), z - 25);
+    const arch = Math.max(0, 1 - dist / 11.5);
+    return 0.55 + arch * 2.4;
+  }
+
+  // Water check: returns null if deep water (blocks walking into river/lake)
+  const waterDepth = getWaterDepth(x, z);
+  if (waterDepth > 0.25) {
+    return null;
+  }
+
+  // Gentle basin slope outside city center
+  const distFromCenter = Math.hypot(x, z);
+  const outerSlope = Math.max(0, (distFromCenter - 125) / 110) * 3.5;
+  return 0.55 + outerSlope;
+}
+
+/**
+ * Returns the live Guilin District & Street name for the GTA-style street banner
+ */
+export function getDistrictInfo(x, z) {
+  if (Math.hypot(x - 27, z - 77) < 30) {
+    return { title: '象鼻山景区', sub: '滨江路南段 · 漓江与桃花江汇流处' };
+  }
+  if (Math.abs(z - (-25)) < 10 && x > 10 && x < 76) {
+    return { title: '解放桥', sub: '跨漓江主桥 · 两江四湖核心景观带' };
+  }
+  if (Math.hypot(x - (-16), z - 26) < 32) {
+    return { title: '杉湖景区 · 日月双塔', sub: '两江四湖环城水系 · 中心湖畔' };
+  }
+  if (Math.hypot(x - (-78), z - 22) < 36) {
+    return { title: '榕湖 · 古南门', sub: '唐代古城遗址 · 千年古榕' };
+  }
+  if (Math.hypot(x - (-32), z - (-46)) < 28) {
+    return { title: '靖江王府 · 独秀峰', sub: '明代藩王城 · 王城历史文化区' };
+  }
+  if (x > -14 && x < 14 && z > -55 && z < -28) {
+    return { title: '东西巷历史文化街区', sub: '岭南风貌古街 · 青砖黛瓦' };
+  }
+  if (x > -15 && x < 14 && z > -22 && z < 4) {
+    return { title: '正阳步行街', sub: '桂林繁华商业长廊' };
+  }
+  if (Math.hypot(x - 18, z - (-68)) < 22 || Math.hypot(x - 10, z - (-114)) < 28) {
+    return { title: '伏波山 · 叠彩山', sub: '漓江西岸北段 · 滨江奇峰' };
+  }
+  if (x > 68) {
+    return { title: '七星区 · 漓江东岸', sub: '七星公园峰群 · 滨江生态新城' };
+  }
+  if (Math.abs(x - (-45)) < 10) {
+    return { title: '中山中路', sub: '桂林城市南北中轴大道' };
+  }
+  if (Math.abs(z - (-25)) < 10) {
+    return { title: '解放东路 / 解放西路', sub: '桂林城市东西主干道' };
+  }
+  return { title: '桂林秀峰城区', sub: '桂林山水甲天下 · 城在景中' };
+}
+
+/**
+ * Creates a stylized GTA-style first-person sports cruiser hood & dashboard
+ * attached to the camera when in Drive Mode (C key).
+ */
+function createCruiserCockpit() {
+  const cockpit = new THREE.Group();
+  cockpit.visible = false;
+
+  const hoodMat = new THREE.MeshStandardMaterial({
+    color: 0x16242b,
+    metalness: 0.72,
+    roughness: 0.25
+  });
+  const trimMat = new THREE.MeshStandardMaterial({
+    color: 0x4ec4a7,
+    emissive: 0x2aa88c,
+    emissiveIntensity: 0.75,
+    roughness: 0.3
+  });
+  const dashMat = new THREE.MeshStandardMaterial({
+    color: 0x10161a,
+    roughness: 0.85
+  });
+
+  // Sleek sports car hood visible in lower viewport
+  const hood = new THREE.Mesh(new THREE.BoxGeometry(1.55, 0.14, 1.55), hoodMat);
+  hood.position.set(0, -0.58, -1.65);
+  hood.rotation.x = 0.08;
+  cockpit.add(hood);
+
+  // Sculpted hood side fenders
+  for (const sx of [-0.74, 0.74]) {
+    const fender = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.16, 1.45), hoodMat);
+    fender.position.set(sx, -0.52, -1.62);
+    fender.rotation.x = 0.06;
+    cockpit.add(fender);
+
+    // Subtle glowing jade DRL accent strip
+    const drl = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.03, 0.08), trimMat);
+    drl.position.set(sx, -0.49, -2.35);
+    cockpit.add(drl);
+  }
+
+  // Dashboard rim
+  const dash = new THREE.Mesh(new THREE.BoxGeometry(1.75, 0.22, 0.45), dashMat);
+  dash.position.set(0, -0.52, -0.78);
+  cockpit.add(dash);
+
+  // Steering wheel (rotates with A/D steering!)
+  const wheelGroup = new THREE.Group();
+  wheelGroup.position.set(-0.34, -0.44, -0.62);
+  wheelGroup.rotation.x = -0.35;
+
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.022, 8, 20), dashMat);
+  const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.03, 0.025), trimMat);
+  wheelGroup.add(rim, spoke);
+  cockpit.add(wheelGroup);
+
+  // Real dynamic headlights (SpotLight) illuminating Guilin streets at night!
+  const headlight = new THREE.SpotLight(0xfff4d6, 0, 58, Math.PI * 0.28, 0.45, 1.4);
+  headlight.position.set(0, -0.35, -1.8);
+  const target = new THREE.Object3D();
+  target.position.set(0, -1.1, -18);
+  cockpit.add(target);
+  headlight.target = target;
+  cockpit.add(headlight);
+
+  return { cockpit, wheelGroup, headlight };
+}
+
+/**
+ * GTA-style Rotating Radar Minimap Renderer
+ */
+function createMinimapRenderer(canvas) {
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width;
+  const h = canvas.height;
+  const cx = w / 2;
+  const cy = h / 2;
+  const scale = 0.72; // pixels per world unit
+
+  const landmarks = [
+    { x: 27, z: 77, color: '#ebb75a', label: '象' },
+    { x: -16, z: 26, color: '#ffca57', label: '塔' },
+    { x: -32, z: -46, color: '#e05a4f', label: '王' },
+    { x: 44, z: -25, color: '#63d7c0', label: '桥' },
+    { x: -78, z: 12, color: '#8ad8ff', label: '门' }
+  ];
+
+  function draw(px, pz, yaw) {
+    ctx.clearRect(0, 0, w, h);
+
+    ctx.save();
+    // Circular radar clip
+    ctx.beginPath();
+    ctx.arc(cx, cy, cx - 2, 0, Math.PI * 2);
+    ctx.clip();
+
+    // Dark jade tactical background
+    ctx.fillStyle = '#0d1e24';
+    ctx.fillRect(0, 0, w, h);
+
+    // Rotate world around player heading (forward = up on radar)
+    ctx.translate(cx, cy);
+    ctx.rotate(yaw);
+
+    const toX = (wx) => (wx - px) * scale;
+    const toY = (wz) => (wz - pz) * scale;
+
+    // 1. Draw Li River
+    ctx.strokeStyle = '#1f6e73';
+    ctx.lineWidth = 30 * scale;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    for (let z = -200; z <= 200; z += 16) {
+      const rx = getLiRiverCenterX(z);
+      if (z === -200) ctx.moveTo(toX(rx), toY(z));
+      else ctx.lineTo(toX(rx), toY(z));
+    }
+    ctx.stroke();
+
+    // 2. Draw Peach Blossom River
+    ctx.lineWidth = 14 * scale;
+    ctx.beginPath();
+    for (let x = -200; x <= 40; x += 16) {
+      const rz = getPeachRiverCenterZ(x);
+      if (x === -200) ctx.moveTo(toX(x), toY(rz));
+      else ctx.lineTo(toX(x), toY(rz));
+    }
+    ctx.stroke();
+
+    // 3. Draw Shan Lake & Rong Lake
+    ctx.fillStyle = '#258285';
+    ctx.beginPath();
+    ctx.ellipse(toX(-16), toY(26), 26 * scale, 18 * scale, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.ellipse(toX(-78), toY(25), 33 * scale, 20 * scale, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 4. Draw Main Urban Roads
+    ctx.strokeStyle = 'rgba(218, 232, 228, 0.55)';
+    ctx.lineWidth = 3.2;
+    ctx.beginPath();
+    // Zhongshan Rd
+    ctx.moveTo(toX(-45), toY(-130));
+    ctx.lineTo(toX(-45), toY(128));
+    // Jiefang Rd + Bridge
+    ctx.moveTo(toX(-138), toY(-25));
+    ctx.lineTo(toX(132), toY(-25));
+    // Lakeside North Ave
+    ctx.moveTo(toX(-126), toY(1.5));
+    ctx.lineTo(toX(22), toY(1.5));
+    // South Ave
+    ctx.moveTo(toX(-130), toY(54));
+    ctx.lineTo(toX(18), toY(54));
+    ctx.stroke();
+
+    // 5. Landmark Blips
+    for (const lm of landmarks) {
+      const lx = toX(lm.x);
+      const ly = toY(lm.z);
+      ctx.fillStyle = lm.color;
+      ctx.beginPath();
+      ctx.arc(lx, ly, 4.2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.restore();
+
+    // Subtle radar range ring
+    ctx.strokeStyle = 'rgba(78, 196, 167, 0.35)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(cx, cy, cx - 2, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Player FOV cone
+    ctx.fillStyle = 'rgba(78, 196, 167, 0.16)';
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, 34, -Math.PI * 0.72, -Math.PI * 0.28);
+    ctx.closePath();
+    ctx.fill();
+
+    // Player Arrow at center
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - 7);
+    ctx.lineTo(cx + 5, cy + 5);
+    ctx.lineTo(cx, cy + 2);
+    ctx.lineTo(cx - 5, cy + 5);
+    ctx.closePath();
+    ctx.fill();
+
+    // North compass tick on ring edge
+    const northAngle = yaw - Math.PI / 2;
+    const nx = cx + Math.cos(northAngle) * (cx - 11);
+    const ny = cy + Math.sin(northAngle) * (cy - 11);
+    ctx.fillStyle = '#ebb75a';
+    ctx.font = 'bold 10px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('N', nx, ny);
+  }
+
+  return { draw };
+}
+
+/**
+ * Main GTA-style First-Person Immersive Street Roaming Controller
+ */
+export function createFirstPersonController(camera, domElement, scene, callbacks = {}) {
+  let active = false;
+  let driveMode = false; // false = Walk/Sprint, true = Street Cruiser Drive
+  let pointerLocked = false;
+  let isDraggingLook = false;
+  let lastMouse = { x: 0, y: 0 };
+
+  const playerPos = new THREE.Vector3(12, 0.55, 76);
+  const velocity = new THREE.Vector3();
+  let verticalVel = 0;
+  let isGrounded = true;
+  let yaw = -Math.PI * 0.48;
+  let pitch = 0.05;
+  let bobTimer = 0;
+  let currentSpeedKmh = 0;
+  let steerVisual = 0;
+
+  const keys = {
+    forward: false,
+    backward: false,
+    left: false,
+    right: false,
+    sprint: false,
+    jump: false
+  };
+
+  // Attach cruiser cockpit to camera
+  const { cockpit, wheelGroup, headlight } = createCruiserCockpit();
+  camera.add(cockpit);
+  scene.add(camera);
+
+  // Minimap
+  const minimapCanvas = document.getElementById('roam-minimap');
+  const minimap = minimapCanvas ? createMinimapRenderer(minimapCanvas) : null;
+
+  // HUD elements
+  const hudDistrictTitle = document.getElementById('roam-district-title');
+  const hudDistrictSub = document.getElementById('roam-district-sub');
+  const hudSpeed = document.getElementById('roam-speed');
+  const hudModeBadge = document.getElementById('roam-mode-badge');
+  const hudLockHint = document.getElementById('roam-lock-hint');
+  const btnDriveToggle = document.getElementById('btn-roam-drive');
+
+  let lastDistrictKey = '';
+
+  function teleportTo(spawn) {
+    playerPos.set(spawn.pos[0], spawn.pos[1], spawn.pos[2]);
+    const gy = getStreetGroundY(playerPos.x, playerPos.z);
+    if (gy !== null) playerPos.y = gy;
+    yaw = spawn.yaw;
+    pitch = spawn.pitch;
+    velocity.set(0, 0, 0);
+    verticalVel = 0;
+    isGrounded = true;
+    applyCameraTransform(0);
+  }
+
+  function setDriveMode(enabled) {
+    driveMode = enabled;
+    cockpit.visible = active && driveMode;
+    if (hudModeBadge) {
+      hudModeBadge.textContent = driveMode ? '敞篷巡游 DRIVE' : '街景步行 WALK';
+      hudModeBadge.classList.toggle('drive', driveMode);
+    }
+    if (btnDriveToggle) {
+      btnDriveToggle.textContent = driveMode ? '切换步行 (C)' : '切换驾车 (C)';
+      btnDriveToggle.classList.toggle('active', driveMode);
+    }
+  }
+
+  function enter(spawnId = 'jiefang-bridge') {
+    if (active) return;
+    active = true;
+    const spawn = ROAM_SPAWNS.find((s) => s.id === spawnId) || ROAM_SPAWNS[0];
+    teleportTo(spawn);
+    setDriveMode(false);
+    camera.fov = 64;
+    camera.updateProjectionMatrix();
+
+    if (callbacks.onEnter) callbacks.onEnter();
+    requestLock();
+  }
+
+  function exit() {
+    if (!active) return;
+    active = false;
+    cockpit.visible = false;
+    headlight.intensity = 0;
+    if (document.pointerLockElement === domElement) {
+      document.exitPointerLock();
+    }
+    camera.fov = 48;
+    camera.updateProjectionMatrix();
+    Object.keys(keys).forEach((k) => (keys[k] = false));
+    if (callbacks.onExit) callbacks.onExit();
+  }
+
+  function requestLock() {
+    if (!active) return;
+    if (domElement.requestPointerLock) {
+      try {
+        const res = domElement.requestPointerLock();
+        if (res && typeof res.catch === 'function') {
+          res.catch(() => {});
+        }
+      } catch {
+        // Fallback to drag-look if pointer lock is blocked
+      }
+    }
+  }
+
+  function applyCameraTransform(bobOffset) {
+    const eyeHeight = driveMode ? 1.58 : 1.92;
+    camera.position.set(playerPos.x, playerPos.y + eyeHeight + bobOffset, playerPos.z);
+    camera.rotation.order = 'YXZ';
+    camera.rotation.y = yaw;
+    camera.rotation.x = pitch;
+    camera.rotation.z = driveMode ? -steerVisual * 0.025 : 0;
+  }
+
+  // Pointer Lock & Mouse Look Events
+  document.addEventListener('pointerlockchange', () => {
+    pointerLocked = document.pointerLockElement === domElement;
+    if (hudLockHint) {
+      hudLockHint.classList.toggle('hidden', pointerLocked || !active);
+    }
+  });
+
+  domElement.addEventListener('mousedown', (e) => {
+    if (!active) return;
+    if (e.button === 0) {
+      isDraggingLook = true;
+      lastMouse = { x: e.clientX, y: e.clientY };
+      if (!pointerLocked) {
+        requestLock();
+      }
+    }
+  });
+
+  window.addEventListener('mouseup', () => {
+    isDraggingLook = false;
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if (!active) return;
+    let dx = 0;
+    let dy = 0;
+    if (pointerLocked) {
+      dx = e.movementX || 0;
+      dy = e.movementY || 0;
+    } else if (isDraggingLook) {
+      dx = e.clientX - lastMouse.x;
+      dy = e.clientY - lastMouse.y;
+      lastMouse = { x: e.clientX, y: e.clientY };
+    } else {
+      return;
+    }
+
+    const sensitivity = 0.0024;
+    yaw -= dx * sensitivity;
+    pitch = THREE.MathUtils.clamp(pitch - dy * sensitivity, -Math.PI * 0.36, Math.PI * 0.42);
+  });
+
+  // Keyboard controls
+  function onKey(e, pressed) {
+    if (!active) return;
+    switch (e.code) {
+      case 'KeyW':
+      case 'ArrowUp':
+        keys.forward = pressed;
+        break;
+      case 'KeyS':
+      case 'ArrowDown':
+        keys.backward = pressed;
+        break;
+      case 'KeyA':
+      case 'ArrowLeft':
+        keys.left = pressed;
+        break;
+      case 'KeyD':
+      case 'ArrowRight':
+        keys.right = pressed;
+        break;
+      case 'ShiftLeft':
+      case 'ShiftRight':
+        keys.sprint = pressed;
+        break;
+      case 'Space':
+        if (pressed && isGrounded && !driveMode) {
+          verticalVel = 7.8;
+          isGrounded = false;
+        }
+        keys.jump = pressed;
+        e.preventDefault();
+        break;
+      case 'KeyC':
+        if (pressed) setDriveMode(!driveMode);
+        break;
+      case 'Escape':
+        // First ESC releases pointer lock automatically; second ESC exits roam mode
+        if (pressed && !pointerLocked) {
+          exit();
+        }
+        break;
+      default:
+        if (pressed && e.key >= '1' && e.key <= '6') {
+          const idx = parseInt(e.key, 10) - 1;
+          if (ROAM_SPAWNS[idx]) teleportTo(ROAM_SPAWNS[idx]);
+        }
+        break;
+    }
+  }
+
+  window.addEventListener('keydown', (e) => onKey(e, true));
+  window.addEventListener('keyup', (e) => onKey(e, false));
+
+  // Main per-frame update
+  const forwardDir = new THREE.Vector3();
+  const rightDir = new THREE.Vector3();
+  const moveIntent = new THREE.Vector3();
+
+  function update(dt, nightFactor) {
+    if (!active) return;
+
+    // Headlight intensity at dusk/night in drive mode
+    headlight.intensity = driveMode ? 4.5 + nightFactor * 38 : 0;
+
+    // Direction vectors on XZ plane
+    forwardDir.set(-Math.sin(yaw), 0, -Math.cos(yaw)).normalize();
+    rightDir.set(Math.cos(yaw), 0, -Math.sin(yaw)).normalize();
+
+    moveIntent.set(0, 0, 0);
+    if (driveMode) {
+      // GTA Cruiser physics: smooth throttle + steering
+      const steerInput = (keys.left ? 1 : 0) - (keys.right ? 1 : 0);
+      steerVisual = THREE.MathUtils.lerp(steerVisual, steerInput, dt * 8);
+      wheelGroup.rotation.z = steerVisual * 0.65;
+
+      const throttle = (keys.forward ? 1 : 0) - (keys.backward ? 0.65 : 0);
+      const maxSpeed = keys.sprint ? 36 : 23;
+      const forwardSpeed = velocity.dot(forwardDir);
+
+      // Steering turns car when moving
+      if (Math.abs(forwardSpeed) > 0.5) {
+        const turnRate = 1.65 * Math.min(1, Math.abs(forwardSpeed) / 10) * Math.sign(forwardSpeed);
+        yaw += steerInput * turnRate * dt;
+        forwardDir.set(-Math.sin(yaw), 0, -Math.cos(yaw)).normalize();
+      }
+
+      const targetSpeed = throttle * maxSpeed;
+      const accel = throttle !== 0 ? 3.2 : 2.6;
+      const newSpeed = THREE.MathUtils.lerp(forwardSpeed, targetSpeed, Math.min(1, dt * accel));
+      velocity.copy(forwardDir).multiplyScalar(newSpeed);
+    } else {
+      // First-person Walk / Sprint physics
+      if (keys.forward) moveIntent.add(forwardDir);
+      if (keys.backward) moveIntent.sub(forwardDir);
+      if (keys.right) moveIntent.add(rightDir);
+      if (keys.left) moveIntent.sub(rightDir);
+
+      if (moveIntent.lengthSq() > 0) {
+        moveIntent.normalize();
+      }
+
+      const maxSpeed = keys.sprint ? 16.5 : 8.2;
+      const targetVx = moveIntent.x * maxSpeed;
+      const targetVz = moveIntent.z * maxSpeed;
+      const damping = moveIntent.lengthSq() > 0 ? 10.0 : 12.0;
+
+      velocity.x = THREE.MathUtils.lerp(velocity.x, targetVx, Math.min(1, dt * damping));
+      velocity.z = THREE.MathUtils.lerp(velocity.z, targetVz, Math.min(1, dt * damping));
+    }
+
+    // Proposed next XZ position with smooth shoreline & map-bounds collision
+    const nextX = THREE.MathUtils.clamp(playerPos.x + velocity.x * dt, -165, 165);
+    const nextZ = THREE.MathUtils.clamp(playerPos.z + velocity.z * dt, -155, 155);
+
+    const groundNext = getStreetGroundY(nextX, nextZ);
+    if (groundNext !== null) {
+      playerPos.x = nextX;
+      playerPos.z = nextZ;
+    } else {
+      // Slide along X or Z independently when brushing against river/lake edge
+      const gx = getStreetGroundY(nextX, playerPos.z);
+      const gz = getStreetGroundY(playerPos.x, nextZ);
+      if (gx !== null) {
+        playerPos.x = nextX;
+        velocity.z *= -0.15;
+      } else if (gz !== null) {
+        playerPos.z = nextZ;
+        velocity.x *= -0.15;
+      } else {
+        velocity.multiplyScalar(-0.2);
+      }
+    }
+
+    // Vertical gravity & smooth bridge height following
+    const currentGround = getStreetGroundY(playerPos.x, playerPos.z) ?? 0.55;
+    if (!isGrounded) {
+      verticalVel -= 22.0 * dt;
+      playerPos.y += verticalVel * dt;
+      if (playerPos.y <= currentGround) {
+        playerPos.y = currentGround;
+        verticalVel = 0;
+        isGrounded = true;
+      }
+    } else {
+      playerPos.y = THREE.MathUtils.lerp(playerPos.y, currentGround, Math.min(1, dt * 14));
+    }
+
+    // Speed & dynamic GTA FOV + Head-bobbing
+    const horizSpeed = Math.hypot(velocity.x, velocity.z);
+    currentSpeedKmh = Math.round(horizSpeed * 3.1);
+
+    const targetFov = driveMode
+      ? 66 + Math.min(14, horizSpeed * 0.42)
+      : keys.sprint && horizSpeed > 4
+        ? 71
+        : 64;
+    if (Math.abs(camera.fov - targetFov) > 0.05) {
+      camera.fov = THREE.MathUtils.lerp(camera.fov, targetFov, Math.min(1, dt * 6));
+      camera.updateProjectionMatrix();
+    }
+
+    let bobOffset = 0;
+    if (!driveMode && isGrounded && horizSpeed > 0.6) {
+      bobTimer += dt * (keys.sprint ? 12.5 : 8.5);
+      bobOffset = Math.sin(bobTimer) * (keys.sprint ? 0.095 : 0.055);
+    } else if (driveMode && horizSpeed > 1) {
+      bobTimer += dt * 18;
+      bobOffset = Math.sin(bobTimer) * 0.015;
+    }
+
+    applyCameraTransform(bobOffset);
+
+    // Update GTA Street HUD
+    if (hudSpeed) {
+      hudSpeed.textContent = `${currentSpeedKmh}`;
+    }
+    if (hudModeBadge && !driveMode) {
+      hudModeBadge.textContent = keys.sprint && horizSpeed > 5 ? '疾驰奔跑 SPRINT' : '街景步行 WALK';
+    }
+
+    const district = getDistrictInfo(playerPos.x, playerPos.z);
+    if (district.title !== lastDistrictKey) {
+      lastDistrictKey = district.title;
+      if (hudDistrictTitle) hudDistrictTitle.textContent = district.title;
+      if (hudDistrictSub) hudDistrictSub.textContent = district.sub;
+    }
+
+    if (minimap) {
+      minimap.draw(playerPos.x, playerPos.z, yaw);
+    }
+  }
+
+  return {
+    enter,
+    exit,
+    teleportTo,
+    setDriveMode,
+    update,
+    isActive: () => active,
+    isDriveMode: () => driveMode
+  };
+}

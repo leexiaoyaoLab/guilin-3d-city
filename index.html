@@ -152,8 +152,72 @@
 
   <!-- Bottom Landmark Camera Tour Bar -->
   <nav class="landmark-dock glass" id="landmark-dock" aria-label="桂林地标视角">
+    <button class="dock-btn roam-trigger" id="btn-enter-roam" title="进入 GTA 风格第一视角街景漫游 (F)">
+      🚶 沉浸漫游
+    </button>
+    <div class="dock-divider"></div>
     <!-- Populated dynamically from LANDMARKS -->
   </nav>
+
+  <!-- GTA-Style Immersive First-Person Street Roaming HUD -->
+  <div class="roam-hud hidden" id="roam-hud">
+    <div class="roam-vignette"></div>
+    <div class="roam-reticle"></div>
+
+    <!-- Top-Left Controls -->
+    <div class="roam-topbar">
+      <button class="roam-pill glass danger" id="btn-exit-roam">← 退出漫游 (ESC)</button>
+      <button class="roam-pill glass" id="btn-roam-drive">切换驾车 (C)</button>
+      <div class="roam-time-pills glass">
+        <button class="roam-mini-btn" data-roam-time="10.5">晴日</button>
+        <button class="roam-mini-btn" data-roam-time="17.5">日落</button>
+        <button class="roam-mini-btn" data-roam-time="20.8">夜景</button>
+      </div>
+    </div>
+
+    <!-- Top-Center Pointer Lock Hint -->
+    <div class="roam-lock-hint glass" id="roam-lock-hint">
+      点击画面锁定鼠标自由环顾 · 也可按住左键拖拽视角
+    </div>
+
+    <!-- Top-Right District & Street Banner -->
+    <div class="roam-district glass">
+      <div class="roam-district-accent"></div>
+      <div>
+        <div class="roam-district-title" id="roam-district-title">解放桥</div>
+        <div class="roam-district-sub" id="roam-district-sub">跨漓江主桥 · 两江四湖核心景观带</div>
+      </div>
+    </div>
+
+    <!-- Bottom-Left Live Rotating Radar Minimap -->
+    <div class="roam-radar-wrap glass">
+      <canvas id="roam-minimap" width="164" height="164"></canvas>
+      <div class="roam-radar-label">GUILIN RADAR</div>
+    </div>
+
+    <!-- Bottom-Center Street Teleport & Controls Bar -->
+    <div class="roam-bottom-center">
+      <div class="roam-teleport-bar glass" id="roam-teleport-bar">
+        <!-- Populated dynamically from ROAM_SPAWNS -->
+      </div>
+      <div class="roam-keybinds">
+        <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 移动</span>
+        <span><kbd>Shift</kbd> 加速</span>
+        <span><kbd>Space</kbd> 跳跃</span>
+        <span><kbd>C</kbd> 步行/驾车</span>
+        <span><kbd>1</kbd>-<kbd>6</kbd> 街景传送</span>
+      </div>
+    </div>
+
+    <!-- Bottom-Right Speedometer & Mode Badge -->
+    <div class="roam-speedo glass">
+      <div class="roam-mode-badge" id="roam-mode-badge">街景步行 WALK</div>
+      <div class="roam-speed-row">
+        <span class="roam-speed-num" id="roam-speed">0</span>
+        <span class="roam-speed-unit">KM/H</span>
+      </div>
+    </div>
+  </div>
 
   <!-- Subtle Floating Restore HUD Button (when hidden) -->
   <button class="restore-hud-btn glass hidden" id="btn-restore-hud">显示控制面板 (H)</button>
