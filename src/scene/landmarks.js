@@ -901,10 +901,15 @@ export function createLandmarks(scene, physics = null) {
   const nightMaterials = [];
   const pointLights = [];
 
-  group.add(createTwinPagodas(nightMaterials, pointLights));
-  group.add(createJingjiangPalace(nightMaterials));
-  group.add(createAncientSouthGate(nightMaterials));
-  group.add(createHistoricQuarter(nightMaterials));
+  const twinPagodas = createTwinPagodas(nightMaterials, pointLights);
+  const jingjiangPalace = createJingjiangPalace(nightMaterials);
+  const ancientSouthGate = createAncientSouthGate(nightMaterials);
+  const historicQuarter = createHistoricQuarter(nightMaterials);
+
+  group.add(twinPagodas);
+  group.add(jingjiangPalace);
+  group.add(ancientSouthGate);
+  group.add(historicQuarter);
 
   // Register solid physics colliders matching exact Baidu Maps / OSM positions
   if (physics) {
@@ -939,5 +944,15 @@ export function createLandmarks(scene, physics = null) {
   }
 
   scene.add(group);
-  return { group, nightMaterials, pointLights };
+  return {
+    group,
+    nightMaterials,
+    pointLights,
+    editableItems: [
+      { id: 'jingjiang-palace', name: '靖江王府', object: jingjiangPalace },
+      { id: 'ancient-south-gate', name: '榕湖 · 古南门', object: ancientSouthGate },
+      { id: 'twin-pagodas', name: '杉湖 · 日月双塔', object: twinPagodas },
+      { id: 'historic-quarter', name: '东西巷 · 逍遥楼 · 正阳街', object: historicQuarter }
+    ]
+  };
 }

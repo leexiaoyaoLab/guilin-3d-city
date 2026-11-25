@@ -364,30 +364,30 @@ export function createKarstMountains(scene, physics = null) {
   duxiuPav.traverse((c) => (c.userData.landmarkId = 'jingjiang-palace'));
   group.add(duxiuPav);
 
-  // 3. 伏波山 (Fubo Hill) - Exact OSM coords (36, -62) on Li River west bank
-  const fubo = createKarstPeakMesh(12.5, 10.8, 30, 404, {
+  // 3. 伏波山 (Fubo Hill) - Placed cleanly EAST of real Binjiang Rd (x=36.7) right on Li River west bank!
+  const fubo = createKarstPeakMesh(11.5, 10.2, 30, 404, {
     domePow: 0.4,
     cliffThreshold: 0.48
   });
-  fubo.position.set(36, 0, -62);
+  fubo.position.set(45, 0, -64);
   fubo.userData.landmarkId = 'fubo-diecai';
   group.add(fubo);
-  if (physics) physics.addCylinderCollider(36, -62, 11.2, 30);
+  if (physics) physics.addCylinderCollider(45, -64, 10.5, 30);
 
   // 4. 叠彩山 (Diecai Hill) - North of Fubo Hill along Li River west bank
   const diecaiGroup = new THREE.Group();
+  diecaiGroup.position.set(36, 0, -118);
   const dcMain = createKarstPeakMesh(15.5, 13.0, 39, 505, { domePow: 0.44, cliffThreshold: 0.5 });
-  dcMain.position.set(32, 0, -118);
   diecaiGroup.add(dcMain);
-  if (physics) physics.addCylinderCollider(32, -118, 13.8, 39);
+  if (physics) physics.addCylinderCollider(36, -118, 13.8, 39);
 
   const dcSub = createKarstPeakMesh(10.5, 9.5, 27, 506, { domePow: 0.46 });
-  dcSub.position.set(17, 0, -112);
+  dcSub.position.set(-15, 0, 6);
   diecaiGroup.add(dcSub);
-  if (physics) physics.addCylinderCollider(17, -112, 9.6, 27);
+  if (physics) physics.addCylinderCollider(21, -112, 9.6, 27);
 
   const nayunPav = createSummitPavilion(nightGlowMats);
-  nayunPav.position.set(32, 38.2, -118);
+  nayunPav.position.set(0, 38.2, 0);
   diecaiGroup.add(nayunPav);
 
   diecaiGroup.traverse((c) => (c.userData.landmarkId = 'fubo-diecai'));
@@ -474,5 +474,14 @@ export function createKarstMountains(scene, physics = null) {
   }
 
   scene.add(group);
-  return { group, nightGlowMats };
+  return {
+    group,
+    nightGlowMats,
+    editableItems: [
+      { id: 'fubo', name: '伏波山', object: fubo },
+      { id: 'diecai', name: '叠彩山', object: diecaiGroup },
+      { id: 'elephant-hill', name: '象鼻山', object: elephantHill },
+      { id: 'duxiu-peak', name: '独秀峰', object: duxiuPeak }
+    ]
+  };
 }

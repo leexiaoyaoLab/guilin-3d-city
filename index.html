@@ -21,6 +21,7 @@
       <div class="engine-switcher">
         <button class="eng-btn active" id="btn-engine-sandbox" title="自绘高精度 3D 桂林实景（套用真实百度/OSM路网坐标，比例协调）">🏔 3D 实景</button>
         <button class="eng-btn" id="btn-engine-bmap" title="切换百度地图 GL 真实矢量底图对照">🗺 百度对照</button>
+        <button class="eng-btn edit-btn" id="btn-toggle-editor" title="开启/关闭地标 3D 拖拽位置编辑器 (E)">✏️ 编辑地标</button>
       </div>
     </div>
 
@@ -139,6 +140,42 @@
           <button class="chip-btn accent" id="btn-spawn-boat">+ 增派游船</button>
         </div>
       </section>
+    </div>
+  </aside>
+
+  <!-- 3D Landmark Position / Rotation / Scale Editor Panel -->
+  <aside class="editor-panel glass hidden" id="editor-panel">
+    <div class="editor-header">
+      <span>✏️ 地标位置编辑器</span>
+      <button class="icon-btn" id="btn-close-editor" title="退出编辑 (E)">×</button>
+    </div>
+    <div class="editor-body">
+      <label class="ed-label">选择地标（或直接在 3D 画面点击）</label>
+      <select id="editor-select" class="ed-select"></select>
+
+      <div class="preset-grid-3">
+        <button class="chip-btn active" data-ed-mode="translate">移动 (G)</button>
+        <button class="chip-btn" data-ed-mode="rotate">旋转 (R)</button>
+        <button class="chip-btn" data-ed-mode="scale">缩放 (S)</button>
+      </div>
+
+      <div class="ed-grid-3">
+        <label><span>X (东)</span><input type="number" id="ed-x" step="0.5" /></label>
+        <label><span>Y (高)</span><input type="number" id="ed-y" step="0.5" /></label>
+        <label><span>Z (南)</span><input type="number" id="ed-z" step="0.5" /></label>
+      </div>
+
+      <div class="ed-grid-2">
+        <label><span>旋转角度 (°)</span><input type="number" id="ed-rot" step="5" /></label>
+        <label><span>缩放比例</span><input type="number" id="ed-scale" step="0.05" min="0.25" max="3.5" /></label>
+      </div>
+
+      <div class="ed-actions">
+        <button class="chip-btn accent" id="btn-ed-copy">📋 复制坐标 JSON</button>
+        <button class="chip-btn" id="btn-ed-reset-one">↺ 重置当前</button>
+        <button class="chip-btn" id="btn-ed-reset-all">↺ 全部默认</button>
+      </div>
+      <div class="ed-status" id="editor-status">拖拽 3D 坐标轴或修改数值（自动保存）</div>
     </div>
   </aside>
 

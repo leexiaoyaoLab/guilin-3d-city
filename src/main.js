@@ -12,6 +12,7 @@ import { createFirstPersonController, ROAM_SPAWNS } from './scene/firstPersonMod
 import { createGuilinEnvironment } from './scene/materialsLibrary.js';
 import { createBaiduMap3DManager } from './bmap/baiduMap3D.js';
 import { BMAP_ROAM_SPAWNS } from './bmap/coordTransform.js';
+import { createLandmarkEditor } from './scene/landmarkEditor.js';
 
 // =========================================================
 // 1. RENDERER, SCENE, CAMERA & CONTROLS
@@ -86,6 +87,12 @@ const firstPerson = createFirstPersonController(camera, renderer.domElement, sce
 
 const bmapContainer = document.getElementById('bmap-container');
 const baiduMap3D = createBaiduMap3DManager(bmapContainer);
+
+// Interactive 3D Landmark Position / Rotation / Scale Editor
+const landmarkEditor = createLandmarkEditor(scene, camera, renderer, controls, [
+  ...karstSystem.editableItems,
+  ...landmarkSystem.editableItems
+]);
 
 // =========================================================
 // 3. INTERACTIVE STATE
@@ -188,7 +195,7 @@ renderer.domElement.addEventListener('pointermove', (e) => {
 });
 
 renderer.domElement.addEventListener('pointerup', (e) => {
-  if (firstPerson.isActive()) return;
+  if (firstPerson.isActive() || landmarkEditor.isActive()) return;
   const dragDist = Math.hypot(e.clientX - pointerDownPos.x, e.clientY - pointerDownPos.y);
   if (dragDist > 6) return; // Ignore camera orbit drags
 
@@ -409,6 +416,14 @@ window.addEventListener('keydown', (e) => {
   }
   if (firstPerson.isActive()) return;
 
+  if (e.key === 'e' || e.key === 'E') {
+    if (state.engineMode === 'sandbox' && !firstPerson.isActive()) {
+      const next = !landmarkEditor.isActive();
+      landmarkEditor.setActive(next);
+      document.getElementById('btn-toggle-editor').classList.toggle('active', next);
+    }
+    return;
+  }
   if (e.key === 'h' || e.key === 'H') {
     toggleHud();
   } else if (e.key === ' ') {
@@ -476,7 +491,23 @@ async function switchEngineMode(mode) {
   }
 }
 
-btnEngineBmap.addEventListener('click', () => switchEngineMode('bmap'));
+const btnToggleEditor = document.getElementById('btn-toggle-editor');
+const btnCloseEditor = document.getElementById('btn-close-editor');
+function setEditorOpen(open) {
+  if (open && state.engineMode !== 'sandbox') {
+    switchEngineMode('sandbox');
+  }
+  landmarkEditor.setActive(open);
+  btnToggleEditor.classList.toggle('active', open);
+  if (open) closeLandmarkCard();
+}
+btnToggleEditor.addEventListener('click', () => setEditorOpen(!landmarkEditor.isActive()));
+btnCloseEditor.addEventListener('click', () => setEditorOpen(false));
+
+btnEngineBmap.addEventListener('click', () => {
+  setEditorOpen(false);
+  switchEngineMode('bmap');
+});
 btnEngineSandbox.addEventListener('click', () => switchEngineMode('sandbox'));
 
 // Default to our full custom 3D Guilin world (using exact real-world road coordinates + balanced 3D proportions);
