@@ -78,12 +78,12 @@ export const GUILIN_BD09_POINTS = {
   'twin-pagodas': {
     id: 'twin-pagodas',
     name: '日月双塔',
-    bd09: wgs84ToBd09(110.2923, 25.2738),
-    sunBd09: wgs84ToBd09(110.2927, 25.2737),
-    moonBd09: wgs84ToBd09(110.2917, 25.2738),
-    zoom: 18.8,
-    tilt: 66,
-    heading: 10
+    bd09: wgs84ToBd09(110.2924, 25.2724),
+    sunBd09: wgs84ToBd09(110.2928, 25.2723),
+    moonBd09: wgs84ToBd09(110.2918, 25.2724),
+    zoom: 18.4,
+    tilt: 64,
+    heading: 8
   },
   'jingjiang-palace': {
     id: 'jingjiang-palace',
