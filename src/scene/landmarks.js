@@ -447,9 +447,10 @@ function createJingjiangPalace(nightMaterials) {
     group.add(col);
   }
 
-  const gateRoof = new THREE.Mesh(new THREE.ConeGeometry(7.6, 2.7, 4), roofYellowMat);
-  gateRoof.rotation.y = Math.PI / 4;
-  gateRoof.scale.set(1.22, 1, 0.68);
+  const gateRoofGeo = new THREE.ConeGeometry(7.6, 2.7, 4);
+  gateRoofGeo.rotateY(Math.PI / 4);
+  const gateRoof = new THREE.Mesh(gateRoofGeo, roofYellowMat);
+  gateRoof.scale.set(1.02, 1, 0.48);
   gateRoof.position.set(0, 8.05, d / 2);
   gateRoof.castShadow = true;
   group.add(gateRoof);
@@ -550,10 +551,11 @@ function buildTraditionalHall(width, depth, height, wallMat, roofMat, lanternMat
   body.receiveShadow = true;
   g.add(body);
 
-  // Sloped hip roof
-  const roof = new THREE.Mesh(new THREE.ConeGeometry(Math.max(width, depth) * 0.78, height * 0.78, 4), roofMat);
-  roof.rotation.y = Math.PI / 4;
-  roof.scale.set(width / Math.max(width, depth) * 1.18, 1, depth / Math.max(width, depth) * 1.18);
+  // Sloped hip roof (rotate geometry BEFORE non-uniform scale so roof stays perfectly symmetric!)
+  const roofGeo = new THREE.ConeGeometry(Math.max(width, depth) * 0.78, height * 0.78, 4);
+  roofGeo.rotateY(Math.PI / 4);
+  const roof = new THREE.Mesh(roofGeo, roofMat);
+  roof.scale.set((width / Math.max(width, depth)) * 1.12, 1, (depth / Math.max(width, depth)) * 1.12);
   roof.position.y = height + height * 0.34;
   roof.castShadow = true;
   g.add(roof);

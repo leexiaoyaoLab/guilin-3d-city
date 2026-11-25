@@ -348,10 +348,10 @@ export function createKarstMountains(scene, physics = null) {
     inkHex: '#a31e17'
   });
   const cliffTablet = new THREE.Mesh(
-    new THREE.BoxGeometry(2.8, 7.6, 0.4),
+    new THREE.BoxGeometry(2.8, 7.6, 0.55),
     [rockBaseMat(0x8c8a82), rockBaseMat(0x8c8a82), rockBaseMat(0x8c8a82), rockBaseMat(0x8c8a82), cliffInscriptionMat, rockBaseMat(0x8c8a82)]
   );
-  cliffTablet.position.set(-32, 13.5, -38.8);
+  cliffTablet.position.set(-32, 14.5, -36.8);
   cliffTablet.userData.landmarkId = 'jingjiang-palace';
   group.add(cliffTablet);
 

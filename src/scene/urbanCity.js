@@ -373,8 +373,9 @@ export function createUrbanCity(scene, physics = null) {
         cap.position.y = h + 0.55;
         bGroup.add(cap);
       } else {
-        const roof = new THREE.Mesh(new THREE.ConeGeometry(Math.max(w, d) * 0.75, 2.1, 4), slopedRoofMat);
-        roof.rotation.y = Math.PI / 4;
+        const rGeo = new THREE.ConeGeometry(Math.max(w, d) * 0.75, 2.1, 4);
+        rGeo.rotateY(Math.PI / 4);
+        const roof = new THREE.Mesh(rGeo, slopedRoofMat);
         roof.scale.set(w / Math.max(w, d), 1, d / Math.max(w, d));
         roof.position.y = h + 1.05;
         bGroup.add(roof);
@@ -498,8 +499,9 @@ export function createUrbanCity(scene, physics = null) {
       wall.position.y = 1.8;
       wall.castShadow = true;
       item.add(wall);
-      const roof = new THREE.Mesh(new THREE.ConeGeometry(5.8, 2.2, 4), slopedRoofMat);
-      roof.rotation.y = Math.PI / 4;
+      const rGeo = new THREE.ConeGeometry(5.8, 2.2, 4);
+      rGeo.rotateY(Math.PI / 4);
+      const roof = new THREE.Mesh(rGeo, slopedRoofMat);
       roof.scale.set(1.25, 1, 0.92);
       roof.position.y = 4.7;
       roof.castShadow = true;
