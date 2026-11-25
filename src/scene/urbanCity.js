@@ -182,9 +182,9 @@ function createRoadNetwork(nightGlowMats) {
       const mx = (x1 + x2) / 2;
       const mz = (z1 + z2) / 2;
 
-      // Skip segments inside deep water or already covered by our 3D sloped bridge decks
-      if (getBridgeSurfaceY(mx, mz, 1.5) !== null) continue;
-      if (isWaterOrShore(mx, mz, 0.4)) continue;
+      // Only skip segments already covered by our custom 3D sloped bridges — NEVER chop out real land roads like 滨江路!
+      if (getBridgeSurfaceY(mx, mz, 1.0) !== null) continue;
+      if (rd.bridge && isWaterOrShore(mx, mz, 0.2)) continue;
 
       const dx = x2 - x1;
       const dz = z2 - z1;

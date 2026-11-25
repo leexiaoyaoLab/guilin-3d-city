@@ -28,7 +28,7 @@ export const ROAM_SPAWNS = [
   {
     id: 'shan-lake',
     name: '杉湖 · 日月双塔',
-    pos: [-21, 0.55, 47],
+    pos: [-25, 0.55, 56],
     yaw: 0,
     pitch: 0.09
   },
@@ -250,14 +250,14 @@ function createMinimapRenderer(canvas) {
     }
     ctx.stroke();
 
-    // 3. Draw Real Shan Lake & Rong Lake
+    // 3. Draw Real Shan Lake & Rong Lake (strictly south of 杉湖北路 and between 榕湖北/南路!)
     ctx.fillStyle = '#258285';
     ctx.beginPath();
-    ctx.ellipse(toX(-21), toY(32), 17.5 * scale, 11.5 * scale, 0, 0, Math.PI * 2);
+    ctx.ellipse(toX(-25), toY(45), 12.5 * scale, 8.5 * scale, 0, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.beginPath();
-    ctx.ellipse(toX(-72), toY(19), 27 * scale, 13.5 * scale, 0, 0, Math.PI * 2);
+    ctx.ellipse(toX(-64), toY(18), 19 * scale, 8.2 * scale, 0, 0, Math.PI * 2);
     ctx.fill();
 
     // 4. Draw ALL 214 Real Curved Vector Roads from guilinRealMapData.js (Authentic Baidu/GPS Radar!)

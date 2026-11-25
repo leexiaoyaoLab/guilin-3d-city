@@ -217,18 +217,18 @@ export function createTerrainAndWater(scene) {
 
         // Night reflections under Sun & Moon Pagodas (Shan Lake) and real Jiefang Bridge
         if (uNightFactor > 0.05) {
-          // Golden Sun Pagoda reflection around (-16, 31)
-          float dSun = length(vWorldPos.xz - vec2(-16.0, 31.0));
+          // Golden Sun Pagoda reflection around (-21, 44)
+          float dSun = length(vWorldPos.xz - vec2(-21.0, 44.0));
           float sunGlow = exp(-dSun * 0.11) * (0.65 + 0.35 * sin(vWorldPos.z * 1.8 + uTime * 3.0));
           color += vec3(1.0, 0.72, 0.22) * sunGlow * uNightFactor * 1.15;
 
-          // Silver-blue Moon Pagoda reflection around (-27, 33)
-          float dMoon = length(vWorldPos.xz - vec2(-27.0, 33.0));
+          // Silver-blue Moon Pagoda reflection around (-29, 46)
+          float dMoon = length(vWorldPos.xz - vec2(-29.0, 46.0));
           float moonGlow = exp(-dMoon * 0.12) * (0.65 + 0.35 * cos(vWorldPos.z * 2.0 - uTime * 2.6));
           color += vec3(0.45, 0.82, 1.0) * moonGlow * uNightFactor * 1.05;
 
-          // Real Jiefang Bridge warm reflection around (30.8, 0.1)
-          float dBridge = length(vWorldPos.xz - vec2(30.8, 0.1));
+          // Real Jiefang Bridge warm reflection around (34.5, 1.2)
+          float dBridge = length(vWorldPos.xz - vec2(34.5, 1.2));
           float bridgeGlow = exp(-dBridge * 0.065) * (0.7 + 0.3 * ripple);
           color += vec3(1.0, 0.78, 0.35) * bridgeGlow * uNightFactor * 0.75;
 
@@ -572,8 +572,8 @@ function createLakesidePromenade() {
 
   for (let i = 0; i < count; i++) {
     const a = (i / count) * Math.PI * 2;
-    const x = -21 + Math.cos(a) * 18.2;
-    const z = 32 + Math.sin(a) * 12.2;
+    const x = -25 + Math.cos(a) * 13.2;
+    const z = 45 + Math.sin(a) * 9.2;
     if (getWaterDepth(x, z) > 0.05) continue;
     dummy.position.set(x, 0.65, z);
     dummy.rotation.set(0, -a, 0);

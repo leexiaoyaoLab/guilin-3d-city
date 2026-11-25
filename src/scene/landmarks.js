@@ -250,7 +250,7 @@ function createTwinPagodas(nightMaterials, pointLights) {
   const group = new THREE.Group();
   group.name = 'SunMoonTwinPagodas';
 
-  // 日塔 (Sun Pagoda - East side of Shan Lake) at (-16, 31)
+  // 日塔 (Sun Pagoda - East side of Shan Lake) at (-21, 44)
   const sunPagoda = buildOctagonalPagoda({
     tiers: 9,
     baseRadius: 3.15,
@@ -263,7 +263,7 @@ function createTwinPagodas(nightMaterials, pointLights) {
     isGold: true,
     nightMaterials
   });
-  sunPagoda.position.set(-16, -0.2, 31);
+  sunPagoda.position.set(-21, -0.2, 44);
   const sunPlaque = createPlaqueBoard(
     '日塔',
     2.1,
@@ -275,7 +275,7 @@ function createTwinPagodas(nightMaterials, pointLights) {
   sunPagoda.add(sunPlaque);
   group.add(sunPagoda);
 
-  // 月塔 (Moon Pagoda - West side of Shan Lake) at (-27, 33)
+  // 月塔 (Moon Pagoda - West side of Shan Lake) at (-29, 46)
   const moonPagoda = buildOctagonalPagoda({
     tiers: 7,
     baseRadius: 2.65,
@@ -288,7 +288,7 @@ function createTwinPagodas(nightMaterials, pointLights) {
     isGold: false,
     nightMaterials
   });
-  moonPagoda.position.set(-27, -0.2, 33);
+  moonPagoda.position.set(-29, -0.2, 46);
   const moonPlaque = createPlaqueBoard(
     '月塔',
     1.85,
@@ -309,7 +309,7 @@ function createTwinPagodas(nightMaterials, pointLights) {
     opacity: 0.65
   });
   nightMaterials.push({ mat: linkMat, baseEmissive: 0.1, nightEmissive: 1.4 });
-  const linkCurve = new THREE.LineCurve3(new THREE.Vector3(-16, 0.05, 31), new THREE.Vector3(-27, 0.05, 33));
+  const linkCurve = new THREE.LineCurve3(new THREE.Vector3(-21, 0.05, 44), new THREE.Vector3(-29, 0.05, 46));
   const linkGeo = new THREE.TubeGeometry(linkCurve, 12, 0.75, 6, false);
   linkGeo.scale(1, 0.25, 1);
   const linkMesh = new THREE.Mesh(linkGeo, linkMat);
@@ -317,12 +317,12 @@ function createTwinPagodas(nightMaterials, pointLights) {
 
   // Point lights for dramatic night reflection on Shan Lake
   const sunLight = new THREE.PointLight(0xffb845, 0, 58, 1.5);
-  sunLight.position.set(-16, 13, 31);
+  sunLight.position.set(-21, 13, 44);
   group.add(sunLight);
   pointLights.push({ light: sunLight, nightIntensity: 55 });
 
   const moonLight = new THREE.PointLight(0x6bd0ff, 0, 52, 1.5);
-  moonLight.position.set(-27, 11, 33);
+  moonLight.position.set(-29, 11, 46);
   group.add(moonLight);
   pointLights.push({ light: moonLight, nightIntensity: 45 });
 

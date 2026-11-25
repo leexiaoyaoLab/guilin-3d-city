@@ -2,20 +2,21 @@
 // Projection origin: (25.2796°N, 110.2945°E) | Scale: 1 unit = 12.5 meters (+X East, -Z North)
 import { REAL_ROADS } from './guilinRealMapData.js';
 
-// Real Li River centerline waypoints extracted directly from downtown Guilin vector map (z sorted North -> South)
+// Real Li River centerline kept strictly EAST of real Binjiang Road (滨江路) from north to south!
 const LI_RIVER_PROFILE = [
-  [34.5, -150],
-  [44.4, -125.2],
-  [55.2, -94.5],
-  [51.6, -65.2],
-  [39.0, -25.3],
-  [30.8, 0.1],    // Exact center of real Jiefang Bridge!
-  [24.5, 10.9],
-  [12.0, 32.0],   // Shan Lake confluence
-  [-0.1, 51.6],
-  [-8.2, 78.2],   // Exact Elephant Trunk Hill & Peach Blossom River confluence!
-  [-10.3, 131.5],
-  [-12.0, 220.0]
+  [44.0, -150],
+  [52.0, -120],
+  [58.0, -90],
+  [54.0, -56],   // Binjiang Rd is at x=36.7 -> west bank at x≈42.5, 100% clear!
+  [44.0, -28],   // Binjiang Rd is at x=29.7
+  [34.5, 0.1],   // Exact center of real Jiefang Bridge! (Binjiang Rd at x=19)
+  [28.0, 14.0],  // Binjiang Rd at x=11
+  [16.0, 32.0],  // Binjiang Rd at x=2
+  [5.0, 44.0],   // Binjiang Rd at x=-7.5
+  [-2.0, 58.0],  // Binjiang Rd at x=-20.6
+  [-5.0, 80.0],  // Elephant Trunk Hill (-18, 80) dips its trunk right into Li River here!
+  [-8.0, 130.0],
+  [-10.0, 220.0]
 ];
 
 export function getLiRiverCenterX(z) {
@@ -30,29 +31,29 @@ export function getLiRiverCenterX(z) {
       return x0 + (x1 - x0) * t;
     }
   }
-  return 30.8;
+  return 34.5;
 }
 
 export function getLiRiverHalfWidth(z) {
-  return 13.5 + Math.sin(z * 0.02 + 0.7) * 2.0;
+  return 11.2 + Math.sin(z * 0.02 + 0.7) * 1.4;
 }
 
 export function getPeachRiverCenterZ(x) {
-  // Real Peach Blossom River enters from WSW (-160, 86) through WenChang Bridge (-47, 79.5) to Li River (-8, 76)
+  // Real Peach Blossom River enters from WSW (-160, 88) through WenChang Bridge (-47.2, 79.5) to Li River (-5, 82)
   const t = Math.max(0, Math.min(1, (x + 160) / 155));
-  return 86 - t * 10 + Math.sin(t * Math.PI * 1.5) * 3.5;
+  return 88 - t * 6 + Math.sin(t * Math.PI * 1.4) * 2.5;
 }
 
 export function getPeachRiverHalfWidth(x) {
   const t = Math.max(0, Math.min(1, (x + 160) / 155));
-  return 5.8 + t * 2.0;
+  return 5.0 + t * 1.8;
 }
 
 // Check if a point (x, z) is inside any water body (returns depth > 0 if in water)
 export function getWaterDepth(x, z) {
   let depth = 0;
 
-  // 1. Real curved Li River (漓江)
+  // 1. Real curved Li River (漓江) — strictly east of Binjiang Rd!
   const liX = getLiRiverCenterX(z);
   const liHalfW = getLiRiverHalfWidth(z);
   const distLi = Math.abs(x - liX);
@@ -60,7 +61,7 @@ export function getWaterDepth(x, z) {
     depth = Math.max(depth, (1 - distLi / liHalfW) * 4.2);
   }
 
-  // 2. Real Peach Blossom River (桃花江) - west of Li River, merging at Elephant Trunk Hill (-8, 76)
+  // 2. Real Peach Blossom River (桃花江) - west of Li River, merging at Elephant Trunk Hill
   if (x < liX + 3) {
     const peachZ = getPeachRiverCenterZ(x);
     const peachHalfW = getPeachRiverHalfWidth(x);
@@ -70,25 +71,25 @@ export function getWaterDepth(x, z) {
     }
   }
 
-  // 3. Shan Lake (杉湖) - East of Yangqiao (-40, 24), South of Zhengyang St (-6, +4)
-  // Real map bounds: x ∈ [-38..-5], z ∈ [22..42], centered at (-21, 32)
+  // 3. Shan Lake (杉湖) — Strictly SOUTH of real 杉湖北路 and WEST of real 滨江路!
+  // Centered at (-25, 45), rx=12.5, rz=8.5
   {
-    const dx = (x - (-21)) / 17.5;
-    const dz = (z - 32) / 11.5;
+    const dx = (x - (-25)) / 12.5;
+    const dz = (z - 45) / 8.5;
     const r = Math.sqrt(dx * dx + dz * dz);
     if (r < 1) {
       depth = Math.max(depth, (1 - r) * 3.4);
     }
   }
 
-  // 4. Rong Lake (榕湖) - West of Yangqiao (-40, 24), South of Ancient South Gate (-68, 6)
-  // Real map bounds: x ∈ [-102..-42], z ∈ [7..31], centered at (-72, 19)
+  // 4. Rong Lake (榕湖) — Strictly BETWEEN real 榕湖北路 and real 榕湖南路!
+  // Centered at (-64, 18), rx=19, rz=8.2
   {
-    const dx = (x - (-72)) / 27;
-    const dz = (z - 19) / 13.5;
+    const dx = (x - (-64)) / 19;
+    const dz = (z - 18) / 8.2;
     const r = Math.sqrt(dx * dx + dz * dz);
-    const idx = (x - (-75)) / 5.8;
-    const idz = (z - 21) / 3.8;
+    const idx = (x - (-66)) / 4.8;
+    const idz = (z - 18.5) / 3.0;
     const ir = Math.sqrt(idx * idx + idz * idz);
     if (r < 1 && ir > 1.0) {
       const lakeD = (1 - r) * 3.4;
@@ -97,17 +98,9 @@ export function getWaterDepth(x, z) {
     }
   }
 
-  // 5. Canal connecting Rong Lake and Shan Lake under Yangqiao Bridge (-40, 25)
-  if (x >= -48 && x <= -33) {
-    const distC = Math.abs(z - 25.5);
-    if (distC < 4.2) {
-      depth = Math.max(depth, (1 - distC / 4.2) * 2.5);
-    }
-  }
-
-  // 6. Canal connecting Shan Lake to Li River (x in [-6..liX], z around 33)
-  if (x >= -6 && x <= liX) {
-    const distC = Math.abs(z - 33);
+  // 5. Canal connecting Rong Lake and Shan Lake under Yangqiao Bridge (-42, 31)
+  if (x >= -48 && x <= -35) {
+    const distC = Math.abs(z - (26 + (x + 48) * 0.85));
     if (distC < 3.6) {
       depth = Math.max(depth, (1 - distC / 3.6) * 2.5);
     }
@@ -187,11 +180,11 @@ export const BRIDGES = [
   {
     id: 'jiefang-bridge',
     name: '解放桥',
-    cx: 30.8,
-    cz: 0.1,
+    cx: 34.5,
+    cz: 1.2,
     angle: Math.atan2(7.1, 21.6), // Real ~+18.2° WNW -> ESE heading matching 解放东路!
-    spanLength: 28,
-    rampLength: 12,
+    spanLength: 24,
+    rampLength: 10,
     width: 8.6,
     baseY: 0.58,
     deckY: 3.65,
@@ -200,14 +193,14 @@ export const BRIDGES = [
   {
     id: 'yangqiao-bridge',
     name: '阳桥',
-    cx: -40.0,
-    cz: 25.5,
-    angle: Math.PI / 2 + 0.24, // Real NNE -> SSW Zhongshan Rd heading!
-    spanLength: 10,
-    rampLength: 7.5,
-    width: 7.6,
+    cx: -41.5,
+    cz: 31.5,
+    angle: Math.PI / 2 + 0.24, // Real Zhongshan Rd heading!
+    spanLength: 9,
+    rampLength: 6.5,
+    width: 7.4,
     baseY: 0.58,
-    deckY: 2.25,
+    deckY: 2.15,
     style: 'stone'
   },
   {
@@ -216,24 +209,11 @@ export const BRIDGES = [
     cx: -47.2,
     cz: 79.5,
     angle: Math.PI / 2 + 0.22, // Real WenChang Bridge over Peach Blossom River!
-    spanLength: 14,
-    rampLength: 8.0,
-    width: 7.6,
-    baseY: 0.58,
-    deckY: 2.45,
-    style: 'stone'
-  },
-  {
-    id: 'binjiang-bridge',
-    name: '滨江拱桥',
-    cx: 0.0,
-    cz: 33.0,
-    angle: Math.PI / 2 + 0.28,
-    spanLength: 9,
+    spanLength: 11,
     rampLength: 6.5,
-    width: 5.2,
+    width: 7.4,
     baseY: 0.58,
-    deckY: 2.15,
+    deckY: 2.35,
     style: 'stone'
   }
 ];

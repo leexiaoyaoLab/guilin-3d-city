@@ -91,7 +91,7 @@ const baiduMap3D = createBaiduMap3DManager(bmapContainer);
 // 3. INTERACTIVE STATE
 // =========================================================
 const state = {
-  engineMode: 'bmap', // 'bmap' (Baidu Maps GL 3D Real Roads) | 'sandbox' (Standalone Three.js + cannon-es)
+  engineMode: 'sandbox', // Default: full custom Three.js 3D Guilin built on real map coordinates & proper architectural scale!
   timeOfDay: 10.5, // Start in bright scenic Guilin morning light
   autoTime: false,
   weather: 'clear', // clear | misty | rain
@@ -479,11 +479,11 @@ async function switchEngineMode(mode) {
 btnEngineBmap.addEventListener('click', () => switchEngineMode('bmap'));
 btnEngineSandbox.addEventListener('click', () => switchEngineMode('sandbox'));
 
-// Launch directly into Baidu Maps GL 3D Real Road Network mode!
-switchEngineMode('bmap').catch((err) => {
-  console.warn('Baidu Maps GL init fallback to sandbox:', err);
-  switchEngineMode('sandbox');
-});
+// Default to our full custom 3D Guilin world (using exact real-world road coordinates + balanced 3D proportions);
+// user can toggle 🗺 百度对照 anytime for 1-click Baidu Maps GL reference!
+bmapContainer.classList.add('hidden');
+btnEngineSandbox.classList.add('active');
+btnEngineBmap.classList.remove('active');
 
 const roamTimeBtns = document.querySelectorAll('[data-roam-time]');
 function syncRoamTimeButtons() {

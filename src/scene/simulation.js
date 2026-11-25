@@ -47,19 +47,19 @@ export function createSimulation(scene) {
   const liRouteDown = new THREE.CatmullRomCurve3(liNorthPts);
   const liRouteUp = new THREE.CatmullRomCurve3(liSouthPts);
 
-  // Route B: Shan Lake (杉湖) loop around Sun & Moon Twin Pagodas (-21, 32)
+  // Route B: Shan Lake (杉湖) loop around Sun & Moon Twin Pagodas (-25, 45)
   const shanLoopPts = [];
   for (let i = 0; i < 16; i++) {
     const a = (i / 16) * Math.PI * 2;
-    shanLoopPts.push(new THREE.Vector3(-21 + Math.cos(a) * 13.5, 0.05, 32 + Math.sin(a) * 8.2));
+    shanLoopPts.push(new THREE.Vector3(-25 + Math.cos(a) * 9.5, 0.05, 45 + Math.sin(a) * 5.8));
   }
   const shanRoute = new THREE.CatmullRomCurve3(shanLoopPts, true);
 
-  // Route C: Rong Lake (榕湖) loop around the Central Island (-72, 19)
+  // Route C: Rong Lake (榕湖) loop around the Central Island (-64, 18)
   const rongLoopPts = [];
   for (let i = 0; i < 16; i++) {
     const a = (i / 16) * Math.PI * 2;
-    rongLoopPts.push(new THREE.Vector3(-72 + Math.cos(a) * 18.5, 0.05, 19 + Math.sin(a) * 9.5));
+    rongLoopPts.push(new THREE.Vector3(-64 + Math.cos(a) * 14.5, 0.05, 18 + Math.sin(a) * 6.0));
   }
   const rongRoute = new THREE.CatmullRomCurve3(rongLoopPts, true);
 
