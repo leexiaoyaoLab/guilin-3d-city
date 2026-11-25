@@ -260,11 +260,16 @@ function createMinimapRenderer(canvas) {
     ctx.ellipse(toX(-64), toY(18), 19 * scale, 8.2 * scale, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // 4. Draw ALL 214 Real Curved Vector Roads from guilinRealMapData.js (Authentic Baidu/GPS Radar!)
+    // 4. Draw ALL 264 Real Curved Vector Roads (including trunk 中山中路/阳桥!)
     for (const rd of REAL_ROADS) {
-      const isMajor = rd.type === 'primary' || rd.type === 'secondary';
-      ctx.strokeStyle = isMajor ? 'rgba(232, 245, 240, 0.72)' : 'rgba(175, 205, 198, 0.35)';
-      ctx.lineWidth = isMajor ? 2.6 : 1.3;
+      const isTrunk = rd.type === 'trunk';
+      const isMajor = isTrunk || rd.type === 'primary' || rd.type === 'secondary';
+      ctx.strokeStyle = isTrunk
+        ? 'rgba(255, 224, 130, 0.88)'
+        : isMajor
+          ? 'rgba(232, 245, 240, 0.72)'
+          : 'rgba(175, 205, 198, 0.35)';
+      ctx.lineWidth = isTrunk ? 3.2 : isMajor ? 2.4 : 1.2;
       ctx.beginPath();
       for (let i = 0; i < rd.pts.length; i++) {
         const rx = toX(rd.pts[i][0]);

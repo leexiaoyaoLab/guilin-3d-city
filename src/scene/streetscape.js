@@ -171,7 +171,7 @@ export function createGuilinStreetscape(scene, physics = null) {
   let shopDistAccum = 0;
 
   for (const rd of REAL_ROADS) {
-    const isMajor = rd.type === 'primary' || rd.type === 'secondary';
+    const isMajor = rd.type === 'trunk' || rd.type === 'primary' || rd.type === 'secondary';
     if (!isMajor) continue;
     const isBinjiang = rd.name && rd.name.includes('滨江');
 

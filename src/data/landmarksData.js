@@ -98,9 +98,9 @@ export function getWaterDepth(x, z) {
     }
   }
 
-  // 5. Canal connecting Rong Lake and Shan Lake under Yangqiao Bridge (-42, 31)
-  if (x >= -48 && x <= -35) {
-    const distC = Math.abs(z - (26 + (x + 48) * 0.85));
+  // 5. Canal connecting Rong Lake and Shan Lake strictly under real Yangqiao Bridge (-40.5, 23.9)
+  if (x >= -47 && x <= -34) {
+    const distC = Math.abs(z - (21.5 + (x + 47) * 0.45));
     if (distC < 3.6) {
       depth = Math.max(depth, (1 - distC / 3.6) * 2.5);
     }
@@ -193,12 +193,12 @@ export const BRIDGES = [
   {
     id: 'yangqiao-bridge',
     name: '阳桥',
-    cx: -41.5,
-    cz: 31.5,
-    angle: Math.PI / 2 + 0.24, // Real Zhongshan Rd heading!
-    spanLength: 9,
-    rampLength: 6.5,
-    width: 7.4,
+    cx: -40.5,
+    cz: 23.9,
+    angle: Math.atan2(4.4, -3.6), // Exact real OSM 阳桥 heading along 中山中路!
+    spanLength: 8.5,
+    rampLength: 6.0,
+    width: 8.2,
     baseY: 0.58,
     deckY: 2.15,
     style: 'stone'

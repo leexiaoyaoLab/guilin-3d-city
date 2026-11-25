@@ -171,10 +171,10 @@ function createRoadNetwork(nightGlowMats) {
 
   for (const rd of REAL_ROADS) {
     const pts = rd.pts;
-    const isMajor = rd.type === 'primary' || rd.type === 'secondary';
+    const isMajor = rd.type === 'trunk' || rd.type === 'trunk_link' || rd.type === 'primary' || rd.type === 'secondary';
     const isPed = rd.type === 'pedestrian';
     const mat = isMajor ? asphaltMat : isPed ? pedestrianMat : secondaryMat;
-    const yLayer = isMajor ? 0.55 : isPed ? 0.53 : 0.51;
+    const yLayer = rd.type === 'trunk' ? 0.56 : isMajor ? 0.55 : isPed ? 0.53 : 0.51;
 
     for (let i = 0; i < pts.length - 1; i++) {
       const [x1, z1] = pts[i];
